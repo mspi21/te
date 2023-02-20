@@ -1,0 +1,9 @@
+Hello, world.
+My editor now supports multiple lines.
+Unfortunately, when reading a file, it adds an extra line at the end, even though it's unnecessary.
+It also doesn't allow line wrapping or horizontal scrolling.
+
+I'll write to you again soon.
+
+Love
+mau
