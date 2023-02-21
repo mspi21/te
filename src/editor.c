@@ -188,9 +188,11 @@ bool editor_load_file(Editor *editor) {
         return false;
 
     char *selected_file = dialog_select_file();
-    assert(selected_file && "TODO load file error handling");
-    if(!editor_load_file_from_path(editor, selected_file))
+    if(!selected_file)
         return false;
+
+    if(!editor_load_file_from_path(editor, selected_file))
+        return false; // TODO alert user?
 
     free(editor->loaded_file);
     editor->loaded_file = selected_file;
@@ -212,7 +214,7 @@ bool editor_save_file(Editor *editor) {
 
     size_t buffer_length = 0;
     for(size_t i = 0; i < editor->lines_size; ++i) {
-        buffer_length += editor->lines[i].buffer_size + 1; // newline at the end
+        buffer_length += editor->lines[i].buffer_size + (i != editor->lines_size - 1);
     }
 
     char *buffer = (char *) malloc(buffer_length);
@@ -220,8 +222,10 @@ bool editor_save_file(Editor *editor) {
     for(size_t i = 0; i < editor->lines_size && buffer_pos < buffer_length; ++i) {
         memcpy(buffer + buffer_pos, editor->lines[i].buffer, editor->lines[i].buffer_size);
         buffer_pos += editor->lines[i].buffer_size;
-        memset(buffer + buffer_pos, '\n', 1);
-        buffer_pos += 1;
+        if(i != editor->lines_size - 1) {
+            memset(buffer + buffer_pos, '\n', 1);
+            buffer_pos += 1;
+        }
     }
 
     bool success = file_write(editor->loaded_file, buffer, buffer_length);

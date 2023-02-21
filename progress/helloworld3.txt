@@ -1,0 +1,5 @@
+Hey besties!
+
+My text editor should now not add any superfluous newlines at the end of the file upon saving!
+
+Yay!
