@@ -155,9 +155,6 @@ int main(int argc, char **argv) {
                 case SDL_TEXTINPUT:
                     editor_insert_text_at_cursor(&editor, event.text.text);
                     break;
-                case SDL_CLIPBOARDUPDATE:
-
-                    break;
                 case SDL_MOUSEBUTTONDOWN:
                     if(event.button.button == SDL_BUTTON_LEFT && event.button.clicks == 1) {
                         editor_handle_single_click(&editor, event.button.x, event.button.y);
@@ -187,6 +184,13 @@ int main(int argc, char **argv) {
                     else if(event.key.keysym.sym == SDLK_n
                     && event.key.keysym.mod & KMOD_CTRL) {
                         editor_new_file(&editor);
+                    }
+                    else if(event.key.keysym.sym == SDLK_v
+                    && event.key.keysym.mod & KMOD_CTRL
+                    && SDL_HasClipboardText()) {
+                        char *clipboard = SDL_GetClipboardText();
+                        editor_insert_text_at_cursor(&editor, clipboard);
+                        SDL_free(clipboard);
                     }
                     else switch(event.key.keysym.sym) {
                         case SDLK_RIGHT:

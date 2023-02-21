@@ -6,13 +6,14 @@
 [x] command line args
 [x] ctrl + arrows doesn't skip whole word
 [x] clicking in the editor doesn't move cursor
+[x] automatic scrolling to cursor when out of view
+[x] paste from clipboard
 
 ## IN PROGRESS
-[] automatic scrolling to cursor when out of view
-[] copy paste
+[] refactor editor -- update scrolling, cursor etc. after similar operations, better input handling
 
 ## TODO
-[] refactor editor -- update scrolling, cursor etc. after similar operations, better input handling
+[] selection + copy, cut
 [] selecting column (click) fix rounding
 [] consider a change in capitalization to be a word boundary
 [] refactor main -- move input handling into separate file / set of functions
