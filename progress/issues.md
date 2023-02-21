@@ -1,11 +1,26 @@
 # Issue tracker
 
-- fix baseline
-- clicking in the editor doesn't move cursor
-- * quitting when changed file
-- * changed file should be indicated in the window title
-- copy paste
-- down arrow on last line + up arrow on first line
-- automatic scrolling to cursor when out of view
-- ctrl + arrows doesn't skip whole word
-- tabs
+## QA
+[x] quitting when changed file
+[x] down arrow on last line + up arrow on first line
+[x] command line args
+[x] ctrl + arrows doesn't skip whole word
+[x] clicking in the editor doesn't move cursor
+
+## IN PROGRESS
+[] automatic scrolling to cursor when out of view
+[] copy paste
+
+## TODO
+[] refactor editor -- update scrolling, cursor etc. after similar operations, better input handling
+[] selecting column (click) fix rounding
+[] consider a change in capitalization to be a word boundary
+[] refactor main -- move input handling into separate file / set of functions
+[] rewrite Makefile
+[] fix baseline
+[] changed file should be indicated in the window title
+[] tabs
+[] move glEnable BLEND to renderer init
+[] undo
+[] aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[] config file

@@ -1,0 +1,10 @@
+Hello there!
+
+While this program still doesn't yet feel like a code editor, it now definitily feels like at least a notepad! I implemented a couple of cool features which I can't easily demonstrate in text, so I'll at least describe them.
+You can now click anywhere to move the cursor, arrow keys work as usual, ctrl+arrow keys either skips words (right, left) or swaps adjacent lines (up, down).
+Also, when typing and moving the cursor, the editor automatically scrolls to keep the cursor in view, though this isn't perfect yet.
+
+I feel like I could now use this pretty universally. In terms of features, it's now almost like nano, except, of course, it is graphical.
+Next, I would like to work on copying and pasting selections, which is pretty much the only big thing I'm missing right now.
+
+Pretty cool!

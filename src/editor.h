@@ -2,6 +2,7 @@
 #define EDITOR_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "./renderer.h"
 #include "./font.h"
@@ -34,6 +35,8 @@ bool editor_init(Editor *editor, SDL_Window *window, Renderer *renderer, Font *f
 
 void editor_render(Editor *editor);
 
+bool editor_load_file_from_path(Editor *editor, char *filepath);
+
 bool editor_load_file(Editor *editor);
 
 bool editor_save_file(Editor *editor);
@@ -52,6 +55,8 @@ void editor_delete_char_after_cursor(Editor *editor);
 
 void editor_insert_newline_at_cursor(Editor *editor);
 
+void editor_handle_single_click(Editor *editor, int32_t x, int32_t y);
+
 void editor_move_cursor_right(Editor *editor);
 
 void editor_move_cursor_left(Editor *editor);
@@ -59,6 +64,14 @@ void editor_move_cursor_left(Editor *editor);
 void editor_move_cursor_up(Editor *editor);
 
 void editor_move_cursor_down(Editor *editor);
+
+void editor_skip_word_right(Editor *editor);
+
+void editor_skip_word_left(Editor *editor);
+
+void editor_swap_lines_up(Editor *editor);
+
+void editor_swap_lines_down(Editor *editor);
 
 void editor_scroll_x(Editor *editor, float val);
 

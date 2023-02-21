@@ -7,11 +7,15 @@
 
 #include "./font.h"
 #include "./editor.h"
+#include "./cmd_parser.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 728
 
 #define WINDOW_SCALE 2.0
+
+#define SCROLL_SPEED 20.0f
+#define SCROLL_INVERTED -1
 
 #define STRING_TAB "    "
 
@@ -65,13 +69,23 @@ void open_file(void) {
 }
 */
 
-int main(void) {
+int main(int argc, char **argv) {
+    // Check validity of cmd args
+    switch(command_line_check(argc, argv)) {
+        case COMMAND_LINE_EXIT_OK: 
+            return 0;
+        case COMMAND_LINE_EXIT_ERROR:
+            return 1;
+        default:
+            break;
+    }
+
     // Initialize SDL2
     scc(SDL_Init(SDL_INIT_VIDEO));
     
     SDL_Window *window = scp(SDL_CreateWindow(
         "",
-        0, 0,
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH * WINDOW_SCALE, WINDOW_HEIGHT * WINDOW_SCALE,
         SDL_WINDOW_OPENGL// | SDL_WINDOW_RESIZABLE
     ));
@@ -116,6 +130,16 @@ int main(void) {
     Editor editor;
     editor_init(&editor, window, &renderer, &font);
 
+    CommandLineStatus status = command_line_parse(argc, argv, &editor);
+    switch(status) {
+        case COMMAND_LINE_EXIT_OK:
+            goto exit;
+        case COMMAND_LINE_EXIT_ERROR:
+            goto fail;
+        default:
+            break;
+    }
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -131,14 +155,25 @@ int main(void) {
                 case SDL_TEXTINPUT:
                     editor_insert_text_at_cursor(&editor, event.text.text);
                     break;
+                case SDL_CLIPBOARDUPDATE:
+
+                    break;
                 case SDL_MOUSEBUTTONDOWN:
-                    // TODO
+                    if(event.button.button == SDL_BUTTON_LEFT && event.button.clicks == 1) {
+                        editor_handle_single_click(&editor, event.button.x, event.button.y);
+                    }
                     break;
                 case SDL_MOUSEWHEEL:
                     if(event.wheel.x)
-                        editor_scroll_x(&editor, event.wheel.preciseX);
+                        editor_scroll_x(
+                            &editor,
+                            SCROLL_SPEED * event.wheel.preciseX
+                        );
                     if(event.wheel.y)
-                        editor_scroll_y(&editor, event.wheel.preciseY);
+                        editor_scroll_y(
+                            &editor,
+                            SCROLL_INVERTED * SCROLL_SPEED * event.wheel.preciseY
+                        );
                     break;
                 case SDL_KEYDOWN:
                     if(event.key.keysym.sym == SDLK_o
@@ -155,16 +190,28 @@ int main(void) {
                     }
                     else switch(event.key.keysym.sym) {
                         case SDLK_RIGHT:
-                            editor_move_cursor_right(&editor);
+                            if(event.key.keysym.mod & KMOD_CTRL)
+                                editor_skip_word_right(&editor);
+                            else
+                                editor_move_cursor_right(&editor);
                             break;
                         case SDLK_LEFT:
-                            editor_move_cursor_left(&editor);
+                            if(event.key.keysym.mod & KMOD_CTRL)
+                                editor_skip_word_left(&editor);                            
+                            else
+                                editor_move_cursor_left(&editor);
                             break;
                         case SDLK_UP:
-                            editor_move_cursor_up(&editor);
+                            if(event.key.keysym.mod & KMOD_CTRL)
+                                editor_swap_lines_up(&editor);
+                            else
+                                editor_move_cursor_up(&editor);
                             break;
                         case SDLK_DOWN:
-                            editor_move_cursor_down(&editor);
+                            if(event.key.keysym.mod & KMOD_CTRL)
+                                editor_swap_lines_down(&editor);
+                            else
+                                editor_move_cursor_down(&editor);
                             break;
                         case SDLK_BACKSPACE:
                             editor_delete_char_before_cursor(&editor);
@@ -185,21 +232,28 @@ int main(void) {
             }
         }
 
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClearColor(0.95f, 0.95f, 0.95f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        //Vec2f pos = vec2f(0.0f, 1.0f * (float) font.atlas.height);
-        //font_render_line(&font, &renderer, hw, hw_len, &pos, vec4f(1.0f, 1.0f, 1.0f, 1.0f));
         editor_render(&editor);
 
         SDL_GL_SwapWindow(window);
     }
 
     // Release resources
+exit:
     editor_destroy(&editor);
     renderer_destroy(&renderer);
     font_destroy(&font);
 
     SDL_Quit();
     return 0;
+
+fail:
+    editor_destroy(&editor);
+    renderer_destroy(&renderer);
+    font_destroy(&font);
+
+    SDL_Quit();
+    return 1;
 }

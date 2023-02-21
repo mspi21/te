@@ -6,10 +6,9 @@
 #include "./file.h"
 #include "./editor.h"
 #include "./dialog.h"
+#include "./utils.h"
 
 #define LINE_STARTING_CAPACITY 64
-#define SCROLL_SPEED 20.0f
-#define SCROLL_INVERTED -1
 
 static Line line_new() {
     return (Line) {
@@ -86,6 +85,31 @@ static void editor_update_title(Editor *editor) {
     SDL_SetWindowTitle(editor->window, editor->loaded_file);
 }
 
+static void editor_adjust_view_to_cursor(Editor *editor) {
+    float char_width = (float) editor->font->atlas.metrics['0'].advance_x;
+    float line_height = (float) editor->font->atlas.height;
+
+    float cursor_absolute_x = editor->cursor_col * char_width;
+    float cursor_absolute_y = editor->cursor_row * line_height;
+
+    int window_w, window_h;
+    SDL_GetWindowSize(editor->window, &window_w, &window_h);
+
+    if(cursor_absolute_x > window_w + editor->renderer->scroll_pos.x) {
+        editor_scroll_x(editor, cursor_absolute_x - (window_w + editor->renderer->scroll_pos.x));
+    }
+    if(cursor_absolute_x < editor->renderer->scroll_pos.x) {
+        editor_scroll_x(editor, cursor_absolute_x - editor->renderer->scroll_pos.x);
+    }
+
+    if(cursor_absolute_y > window_h + editor->renderer->scroll_pos.y) {
+        editor_scroll_y(editor, cursor_absolute_y - (window_h + editor->renderer->scroll_pos.y));
+    }
+    if(cursor_absolute_y < editor->renderer->scroll_pos.y) {
+        editor_scroll_y(editor, cursor_absolute_y - editor->renderer->scroll_pos.y);
+    }
+}
+
 bool editor_init(Editor *editor, SDL_Window *window, Renderer *renderer, Font *font) {
     *editor = (Editor) {0};
     editor->window = window;
@@ -116,7 +140,7 @@ void editor_render(Editor *editor) {
             editor->lines[i].buffer,
             editor->lines[i].buffer_size,
             vec2f(0.0f, (float)((i + 1) * line_height)),
-            vec4f(1.0f, 1.0f, 1.0f, 1.0f)
+            vec4f(0.0f, 0.0f, 0.0f, 1.0f)
         );
         
         // Render cursor
@@ -135,7 +159,7 @@ void editor_render(Editor *editor) {
             renderer_solid_rect(editor->renderer,
                 vec2f(x_pos, y_pos),
                 vec2f(2.0f, line_height),
-                vec4f(1.0f, 1.0f, 1.0f, 1.0f)
+                vec4f(0.0f, 0.0f, 0.0f, 1.0f)
             );
             renderer_flush(editor->renderer);
         }
@@ -157,7 +181,7 @@ static void editor_clear_lines(Editor *editor) {
     editor->lines_capacity = 0;
 }
 
-static bool editor_load_file_from_path(Editor *editor, const char *filepath) {
+bool editor_load_file_from_path(Editor *editor, char *filepath) {
     char *buffer;
     size_t length;
     
@@ -180,6 +204,14 @@ static bool editor_load_file_from_path(Editor *editor, const char *filepath) {
     }
     editor_add_line(editor, buffer + line_start, line_length);
     
+    free(editor->loaded_file);
+    editor->loaded_file = filepath;
+    editor->changed_file = false;
+    editor_update_title(editor);
+
+    editor->renderer->scroll_pos = vec2f(0.0f, 0.0f);
+    editor->cursor_row = 0;
+    editor->cursor_col = 0;
     return true;
 }
 
@@ -191,19 +223,7 @@ bool editor_load_file(Editor *editor) {
     if(!selected_file)
         return false;
 
-    if(!editor_load_file_from_path(editor, selected_file))
-        return false; // TODO alert user?
-
-    free(editor->loaded_file);
-    editor->loaded_file = selected_file;
-    editor->changed_file = false;
-    editor_update_title(editor);
-
-    editor->renderer->scroll_pos = vec2f(0.0f, 0.0f);
-    editor->cursor_row = 0;
-    editor->cursor_col = 0;
-
-    return true;
+    return editor_load_file_from_path(editor, selected_file);
 }
 
 bool editor_save_file(Editor *editor) {
@@ -267,6 +287,8 @@ void editor_insert_text_at_cursor(Editor *editor, const char *text) {
 
     editor->cursor_col += text_length;
     editor->changed_file = true;
+    
+    editor_adjust_view_to_cursor(editor);
 }
 
 void editor_delete_char_before_cursor(Editor *editor) {
@@ -274,6 +296,8 @@ void editor_delete_char_before_cursor(Editor *editor) {
         Line *line = &editor->lines[editor->cursor_row];
         line_delete_char(line, --editor->cursor_col);
         editor->changed_file = true;
+
+        editor_adjust_view_to_cursor(editor);
         return;
     }
 
@@ -297,6 +321,8 @@ void editor_delete_char_before_cursor(Editor *editor) {
     editor->cursor_col = prev_line_end;
 
     editor->changed_file = true;
+    
+    editor_adjust_view_to_cursor(editor);
 }
 
 void editor_delete_char_after_cursor(Editor *editor) {
@@ -304,6 +330,8 @@ void editor_delete_char_after_cursor(Editor *editor) {
         Line *line = &editor->lines[editor->cursor_row];
         line_delete_char(line, editor->cursor_col);
         editor->changed_file = true;
+    
+        editor_adjust_view_to_cursor(editor);
         return;
     }
 
@@ -322,6 +350,8 @@ void editor_delete_char_after_cursor(Editor *editor) {
     --editor->lines_size;
 
     editor->changed_file = true;
+    
+    editor_adjust_view_to_cursor(editor);
 }
 
 void editor_insert_newline_at_cursor(Editor *editor) {
@@ -348,6 +378,21 @@ void editor_insert_newline_at_cursor(Editor *editor) {
     editor->cursor_col = 0;
 
     editor->changed_file = true;
+
+    editor_adjust_view_to_cursor(editor);
+}
+
+void editor_handle_single_click(Editor *editor, int32_t x, int32_t y) {
+    float line_height = (float) editor->font->atlas.height;
+    // since we're using a monospace font, all characters should have the same advance_x
+    float char_width = (float) editor->font->atlas.metrics['0'].advance_x;
+    Vec2f scroll_pos = editor->renderer->scroll_pos;
+
+    size_t line_number = (scroll_pos.y + y) / line_height;
+    size_t col_number = (scroll_pos.x + x) / char_width;
+
+    editor->cursor_row = minul(line_number, editor->lines_size - 1);
+    editor->cursor_col = minul(col_number, editor->lines[editor->cursor_row].buffer_size);
 }
 
 void editor_move_cursor_right(Editor *editor) {
@@ -359,6 +404,8 @@ void editor_move_cursor_right(Editor *editor) {
         ++editor->cursor_row;
         editor->cursor_col = 0;
     }
+
+    editor_adjust_view_to_cursor(editor);
 }
 
 void editor_move_cursor_left(Editor *editor) {
@@ -368,24 +415,102 @@ void editor_move_cursor_left(Editor *editor) {
         --editor->cursor_row;
         editor->cursor_col = editor->lines[editor->cursor_row].buffer_size;
     }
+
+    editor_adjust_view_to_cursor(editor);
 }
 
 void editor_move_cursor_up(Editor *editor) {
     if(editor->cursor_row) --editor->cursor_row;
+    else editor->cursor_col = 0;
+
+    editor_adjust_view_to_cursor(editor);
 }
 
 void editor_move_cursor_down(Editor *editor) {
     if(editor->cursor_row < editor->lines_size - 1) ++editor->cursor_row;
+    else editor->cursor_col = editor->lines[editor->cursor_row].buffer_size;
+
+    editor_adjust_view_to_cursor(editor);
+}
+
+void editor_skip_word_right(Editor *editor) {
+    if(editor->cursor_col == editor->lines[editor->cursor_row].buffer_size) {
+        editor_move_cursor_right(editor);
+        return;
+    }
+
+    while(
+        editor->cursor_col < editor->lines[editor->cursor_row].buffer_size &&
+        utils_is_word_boundary(editor->lines[editor->cursor_row].buffer[editor->cursor_col])
+    )
+        ++editor->cursor_col;
+
+    while(
+        editor->cursor_col < editor->lines[editor->cursor_row].buffer_size &&
+        !utils_is_word_boundary(editor->lines[editor->cursor_row].buffer[editor->cursor_col])
+    )
+        ++editor->cursor_col;
+
+    editor_adjust_view_to_cursor(editor);
+}
+
+void editor_skip_word_left(Editor *editor) {
+    if(!editor->cursor_col) {
+        editor_move_cursor_left(editor);
+        return;
+    }
+
+    while(
+        editor->cursor_col > 0 &&
+        utils_is_word_boundary(editor->lines[editor->cursor_row].buffer[editor->cursor_col - 1])
+    )
+        --editor->cursor_col;
+
+    while(
+        editor->cursor_col > 0 &&
+        !utils_is_word_boundary(editor->lines[editor->cursor_row].buffer[editor->cursor_col - 1])
+    )
+        --editor->cursor_col;
+
+    editor_adjust_view_to_cursor(editor);
+}
+
+void editor_swap_lines_up(Editor *editor) {
+    if(!editor->cursor_row)
+        return;
+
+    Line tmp = editor->lines[editor->cursor_row];
+    editor->lines[editor->cursor_row] = editor->lines[editor->cursor_row - 1];
+    editor->lines[editor->cursor_row - 1] = tmp;
+
+    editor->changed_file = true;
+    --editor->cursor_row;
+    
+    editor_adjust_view_to_cursor(editor);
+}
+
+void editor_swap_lines_down(Editor *editor) {
+    if(editor->cursor_row == editor->lines_size - 1)
+        return;
+
+    Line tmp = editor->lines[editor->cursor_row];
+    editor->lines[editor->cursor_row] = editor->lines[editor->cursor_row + 1];
+    editor->lines[editor->cursor_row + 1] = tmp;
+
+    editor->changed_file = true;
+    ++editor->cursor_row;
+    
+    editor_adjust_view_to_cursor(editor);
 }
 
 void editor_scroll_x(Editor *editor, float val) {
-    editor->renderer->scroll_pos.x += SCROLL_SPEED * val;
+    editor->renderer->scroll_pos.x += /*SCROLL_SPEED * */val;
     if(editor->renderer->scroll_pos.x < 0.0f)
         editor->renderer->scroll_pos.x = 0.0f;
 }
 
 void editor_scroll_y(Editor *editor, float val) {
-    editor->renderer->scroll_pos.y += SCROLL_INVERTED * SCROLL_SPEED * val;
+    editor->renderer->scroll_pos.y += /*SCROLL_INVERTED * SCROLL_SPEED * */val;
     if(editor->renderer->scroll_pos.y < 0.0f)
         editor->renderer->scroll_pos.y = 0.0f;
 }
@@ -405,4 +530,3 @@ void editor_destroy(Editor *editor) {
 
     free(editor->loaded_file);
 }
-
