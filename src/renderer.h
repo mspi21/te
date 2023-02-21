@@ -44,8 +44,8 @@ typedef struct {
     GLint uniforms[COUNT_UNIFORMS];
 
     Vec2f resolution;
+    Vec2f scroll_pos;
     float scale;
-    float scroll_pos;
 } Renderer;
 
 bool renderer_init(Renderer *renderer);

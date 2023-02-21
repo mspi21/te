@@ -237,7 +237,7 @@ void renderer_set_shader(Renderer *renderer, Shader shader) {
         );
     }
     glUniform2f(renderer->uniforms[UNIFORM_RESOLUTION], renderer->resolution.x, renderer->resolution.y);
-    glUniform1f(renderer->uniforms[UNIFORM_SCROLL_POS], renderer->scroll_pos);
+    glUniform2f(renderer->uniforms[UNIFORM_SCROLL_POS], renderer->scroll_pos.x, renderer->scroll_pos.y);
     renderer->current_shader = shader;
 }
 

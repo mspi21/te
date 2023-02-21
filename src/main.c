@@ -13,6 +13,8 @@
 
 #define WINDOW_SCALE 2.0
 
+#define STRING_TAB "    "
+
 void scc(int code) {
     if(code < 0) {
         fprintf(stderr, "SDL Error (%d): %s\n", code, SDL_GetError());
@@ -124,14 +126,19 @@ int main(void) {
         while(SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT:
-                    quit = true;
+                    quit = editor_try_quit(&editor);
                     break;
                 case SDL_TEXTINPUT:
                     editor_insert_text_at_cursor(&editor, event.text.text);
                     break;
+                case SDL_MOUSEBUTTONDOWN:
+                    // TODO
+                    break;
                 case SDL_MOUSEWHEEL:
+                    if(event.wheel.x)
+                        editor_scroll_x(&editor, event.wheel.preciseX);
                     if(event.wheel.y)
-                        editor_scroll(&editor, event.wheel.preciseY);
+                        editor_scroll_y(&editor, event.wheel.preciseY);
                     break;
                 case SDL_KEYDOWN:
                     if(event.key.keysym.sym == SDLK_o
@@ -167,6 +174,9 @@ int main(void) {
                             break;
                         case SDLK_RETURN:
                             editor_insert_newline_at_cursor(&editor);
+                            break;
+                        case SDLK_TAB:
+                            editor_insert_text_at_cursor(&editor, STRING_TAB);
                             break;
                         }
                     break;

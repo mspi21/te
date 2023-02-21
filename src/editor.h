@@ -40,6 +40,8 @@ bool editor_save_file(Editor *editor);
 
 bool editor_new_file(Editor *editor);
 
+bool editor_try_quit(Editor *editor);
+
 void editor_destroy(Editor *editor);
 
 void editor_insert_text_at_cursor(Editor *editor, const char *text);
@@ -58,6 +60,8 @@ void editor_move_cursor_up(Editor *editor);
 
 void editor_move_cursor_down(Editor *editor);
 
-void editor_scroll(Editor *editor, float val);
+void editor_scroll_x(Editor *editor, float val);
+
+void editor_scroll_y(Editor *editor, float val);
 
 #endif // EDITOR_H_

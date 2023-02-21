@@ -199,6 +199,10 @@ bool editor_load_file(Editor *editor) {
     editor->changed_file = false;
     editor_update_title(editor);
 
+    editor->renderer->scroll_pos = vec2f(0.0f, 0.0f);
+    editor->cursor_row = 0;
+    editor->cursor_col = 0;
+
     return true;
 }
 
@@ -248,6 +252,10 @@ bool editor_new_file(Editor *editor) {
     editor_add_line(editor, "", 0);
 
     editor_update_title(editor);
+
+    editor->renderer->scroll_pos = vec2f(0.0f, 0.0f);
+    editor->cursor_row = 0;
+    editor->cursor_col = 0;
     return true;
 }
 
@@ -370,10 +378,22 @@ void editor_move_cursor_down(Editor *editor) {
     if(editor->cursor_row < editor->lines_size - 1) ++editor->cursor_row;
 }
 
-void editor_scroll(Editor *editor, float val) {
-    editor->renderer->scroll_pos += SCROLL_INVERTED * SCROLL_SPEED * val;
-    if(editor->renderer->scroll_pos < 0.0f)
-        editor->renderer->scroll_pos = 0.0f;
+void editor_scroll_x(Editor *editor, float val) {
+    editor->renderer->scroll_pos.x += SCROLL_SPEED * val;
+    if(editor->renderer->scroll_pos.x < 0.0f)
+        editor->renderer->scroll_pos.x = 0.0f;
+}
+
+void editor_scroll_y(Editor *editor, float val) {
+    editor->renderer->scroll_pos.y += SCROLL_INVERTED * SCROLL_SPEED * val;
+    if(editor->renderer->scroll_pos.y < 0.0f)
+        editor->renderer->scroll_pos.y = 0.0f;
+}
+
+bool editor_try_quit(Editor *editor) {
+    if(!editor->changed_file)
+        return true;
+    return dialog_confirm_unsaved_changes();
 }
 
 void editor_destroy(Editor *editor) {
