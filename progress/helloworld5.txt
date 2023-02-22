@@ -1,0 +1,7 @@
+Hello there.
+
+My editor should now in theory show a little star in the title whenever you're working with an existing file with unsaved changes.
+Let's see if it works properly. It looks promising so far!
+
+Kisses and love
+mau

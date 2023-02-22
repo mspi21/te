@@ -1,16 +1,33 @@
 DEPS=sdl2 freetype2 glew
 
+TARGET_NAME=te
+
 CC=gcc
 CFLAGS=-Wall -pedantic -std=c11 -g `pkg-config --cflags $(DEPS)`
 LIBS=-lm `pkg-config --libs $(DEPS)`
 
-HEADER_FILES=src/file.h src/font.h src/renderer.h src/vec.h src/editor.h src/dialog.h src/cmd_parser.h src/utils.h
-IMPL_FILES=src/file.c src/font.c src/main.c src/renderer.c src/vec.c src/editor.c src/dialog.c src/cmd_parser.c src/utils.c
+SRCS = $(wildcard src/*.c)
+HDRS = $(wildcard src/*.h)
+OBJS = $(patsubst src/%.c, build/%.o, $(SRCS))
 
-te: $(HEADER_FILES) $(IMPL_FILES)
-	$(CC) $(CFLAGS) -o te $(IMPL_FILES) $(LIBS) -lGL -lGLU
+$(TARGET_NAME): $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LIBS) -lGL -lGLU
+
+build/%.o: src/%.c | build/
+	$(CC) $(CFLAGS) $< -c -o $@
+
+build/:
+	mkdir -p build
 
 all: te
 
+run:
+	./te
+
 clean:
 	rm ./te
+
+Makefile.d:
+	$(CC) -MM $(SRCS) > Makefile.d
+
+include Makefile.d

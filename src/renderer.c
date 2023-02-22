@@ -137,6 +137,10 @@ bool renderer_init(Renderer *renderer) {
         glDeleteShader(frag_shader);
     }
     glDeleteShader(vert_shader);
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     return true;
 }
 

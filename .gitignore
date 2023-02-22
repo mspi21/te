@@ -1,3 +1,5 @@
 # proudly written in my own text editor!
+Makefile.d
 .vscode/
+build/
 te

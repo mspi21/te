@@ -9,6 +9,7 @@
 #include "./utils.h"
 
 #define LINE_STARTING_CAPACITY 64
+#define TITLE_DEFAULT "Untitled file"
 
 static Line line_new() {
     return (Line) {
@@ -77,12 +78,8 @@ static void line_destroy(Line *line) {
     line->buffer = NULL;
 }
 
-static void editor_update_title(Editor *editor) {
-    if(!editor->loaded_file) {
-        SDL_SetWindowTitle(editor->window, "Untitled file");
-        return;
-    }
-    SDL_SetWindowTitle(editor->window, editor->loaded_file);
+static void editor_set_title(Editor *editor, const char *title) {
+    SDL_SetWindowTitle(editor->window, title);
 }
 
 static void editor_adjust_view_to_cursor(Editor *editor) {
@@ -110,6 +107,13 @@ static void editor_adjust_view_to_cursor(Editor *editor) {
     }
 }
 
+static void editor_contents_changed(Editor *editor) {
+    if(editor->loaded_file && !editor->changed_file) {
+        editor->changed_file = true;
+        editor_set_title(editor, utils_add_asterisk_to_string(strdup(editor->loaded_file)));
+    }
+}
+
 bool editor_init(Editor *editor, SDL_Window *window, Renderer *renderer, Font *font) {
     *editor = (Editor) {0};
     editor->window = window;
@@ -121,7 +125,7 @@ bool editor_init(Editor *editor, SDL_Window *window, Renderer *renderer, Font *f
     editor->lines_size = 1;
     editor->lines[0] = line_new();
 
-    editor_update_title(editor);
+    editor_set_title(editor, strdup(TITLE_DEFAULT));
     return true;
 }
 
@@ -145,9 +149,9 @@ void editor_render(Editor *editor) {
         
         // Render cursor
         if(editor->cursor_row == i) {
-            if(editor->cursor_col > editor->lines[i].buffer_size) {
+            /* if(editor->cursor_col > editor->lines[i].buffer_size) {
                 editor->cursor_col = editor->lines[i].buffer_size;
-            }
+            } */
             float x_pos = font_calculate_width(
                 editor->font,
                 editor->lines[i].buffer,
@@ -181,6 +185,12 @@ static void editor_clear_lines(Editor *editor) {
     editor->lines_capacity = 0;
 }
 
+static void editor_clamp_cursor(Editor *editor) {
+    if(editor->cursor_col > editor->lines[editor->cursor_row].buffer_size) {
+        editor->cursor_col = editor->lines[editor->cursor_row].buffer_size;
+    }
+}
+
 bool editor_load_file_from_path(Editor *editor, char *filepath) {
     char *buffer;
     size_t length;
@@ -207,7 +217,7 @@ bool editor_load_file_from_path(Editor *editor, char *filepath) {
     free(editor->loaded_file);
     editor->loaded_file = filepath;
     editor->changed_file = false;
-    editor_update_title(editor);
+    editor_set_title(editor, filepath);
 
     editor->renderer->scroll_pos = vec2f(0.0f, 0.0f);
     editor->cursor_row = 0;
@@ -230,10 +240,11 @@ bool editor_save_file(Editor *editor) {
     if(!editor->changed_file)
         return true;
 
-    if(!editor->loaded_file) {
-        editor->loaded_file = dialog_save_file();
-        assert(editor->loaded_file && "TODO Save failed");
-        editor_update_title(editor);
+    char *dest = editor->loaded_file;
+    if(!dest) {
+        dest = dialog_save_file();
+        if(!dest)
+            return false;
     }
 
     size_t buffer_length = 0;
@@ -252,10 +263,13 @@ bool editor_save_file(Editor *editor) {
         }
     }
 
-    bool success = file_write(editor->loaded_file, buffer, buffer_length);
-    if(success)
-        editor->changed_file = false;
-    return success;
+    if(!file_write(dest, buffer, buffer_length))
+        return false;
+
+    editor->loaded_file = dest;
+    editor->changed_file = false;
+    editor_set_title(editor, editor->loaded_file);
+    return true;
 }
 
 bool editor_new_file(Editor *editor) {
@@ -271,7 +285,7 @@ bool editor_new_file(Editor *editor) {
     editor_clear_lines(editor);
     editor_add_line(editor, "", 0);
 
-    editor_update_title(editor);
+    editor_set_title(editor, TITLE_DEFAULT);
 
     editor->renderer->scroll_pos = vec2f(0.0f, 0.0f);
     editor->cursor_row = 0;
@@ -284,10 +298,9 @@ void editor_insert_text_at_cursor(Editor *editor, const char *text) {
 
     Line *line = &editor->lines[editor->cursor_row];
     line_insert_text(line, editor->cursor_col, text, text_length);
+    editor_contents_changed(editor);
 
     editor->cursor_col += text_length;
-    editor->changed_file = true;
-    
     editor_adjust_view_to_cursor(editor);
 }
 
@@ -295,7 +308,7 @@ void editor_delete_char_before_cursor(Editor *editor) {
     if(editor->cursor_col) {
         Line *line = &editor->lines[editor->cursor_row];
         line_delete_char(line, --editor->cursor_col);
-        editor->changed_file = true;
+        editor_contents_changed(editor);
 
         editor_adjust_view_to_cursor(editor);
         return;
@@ -316,12 +329,10 @@ void editor_delete_char_before_cursor(Editor *editor) {
         (editor->lines_size - editor->cursor_row - 1) * sizeof(*editor->lines)
     );
     --editor->lines_size;
-
+    editor_contents_changed(editor);
+    
     --editor->cursor_row;
     editor->cursor_col = prev_line_end;
-
-    editor->changed_file = true;
-    
     editor_adjust_view_to_cursor(editor);
 }
 
@@ -329,7 +340,7 @@ void editor_delete_char_after_cursor(Editor *editor) {
     if(editor->cursor_col < editor->lines[editor->cursor_row].buffer_size) {
         Line *line = &editor->lines[editor->cursor_row];
         line_delete_char(line, editor->cursor_col);
-        editor->changed_file = true;
+        editor_contents_changed(editor);
     
         editor_adjust_view_to_cursor(editor);
         return;
@@ -348,17 +359,15 @@ void editor_delete_char_after_cursor(Editor *editor) {
         (editor->lines_size - editor->cursor_row + 2) * sizeof(*editor->lines)
     );
     --editor->lines_size;
-
-    editor->changed_file = true;
+    editor_contents_changed(editor);
     
     editor_adjust_view_to_cursor(editor);
 }
 
 void editor_insert_newline_at_cursor(Editor *editor) {
-    if(editor->lines_size == editor->lines_capacity) {
+    if(editor->lines_size == editor->lines_capacity)
         editor_lines_grow(editor);
-    }
-
+    
     Line *this_line = &editor->lines[editor->cursor_row];
     
     Line new_line = line_create_copy(
@@ -376,8 +385,7 @@ void editor_insert_newline_at_cursor(Editor *editor) {
     ++editor->lines_size;
     editor->lines[++editor->cursor_row] = new_line;
     editor->cursor_col = 0;
-
-    editor->changed_file = true;
+    editor_contents_changed(editor);
 
     editor_adjust_view_to_cursor(editor);
 }
@@ -420,14 +428,20 @@ void editor_move_cursor_left(Editor *editor) {
 }
 
 void editor_move_cursor_up(Editor *editor) {
-    if(editor->cursor_row) --editor->cursor_row;
+    if(editor->cursor_row) {
+        --editor->cursor_row;
+        editor_clamp_cursor(editor);
+    }
     else editor->cursor_col = 0;
 
     editor_adjust_view_to_cursor(editor);
 }
 
 void editor_move_cursor_down(Editor *editor) {
-    if(editor->cursor_row < editor->lines_size - 1) ++editor->cursor_row;
+    if(editor->cursor_row < editor->lines_size - 1) {
+        ++editor->cursor_row;
+        editor_clamp_cursor(editor);
+    }
     else editor->cursor_col = editor->lines[editor->cursor_row].buffer_size;
 
     editor_adjust_view_to_cursor(editor);
@@ -482,10 +496,9 @@ void editor_swap_lines_up(Editor *editor) {
     Line tmp = editor->lines[editor->cursor_row];
     editor->lines[editor->cursor_row] = editor->lines[editor->cursor_row - 1];
     editor->lines[editor->cursor_row - 1] = tmp;
+    editor_contents_changed(editor);
 
-    editor->changed_file = true;
-    --editor->cursor_row;
-    
+    --editor->cursor_row;    
     editor_adjust_view_to_cursor(editor);
 }
 
@@ -496,10 +509,9 @@ void editor_swap_lines_down(Editor *editor) {
     Line tmp = editor->lines[editor->cursor_row];
     editor->lines[editor->cursor_row] = editor->lines[editor->cursor_row + 1];
     editor->lines[editor->cursor_row + 1] = tmp;
+    editor_contents_changed(editor);
 
-    editor->changed_file = true;
     ++editor->cursor_row;
-    
     editor_adjust_view_to_cursor(editor);
 }
 

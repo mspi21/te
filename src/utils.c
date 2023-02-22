@@ -9,7 +9,7 @@ size_t minul(size_t a, size_t b) {
     return a < b ? a : b;
 }
 
-char *strdup(char *src) {
+char *strdup(const char *src) {
     size_t len = strlen(src) + 1;
     char *copy = malloc(len);
     memcpy(copy, src, len);
@@ -23,25 +23,20 @@ bool utils_is_word_boundary(char c) {
     return false;
 }
 
-static bool utils_title_has_asterisk_len(char *title, size_t len) {
+static bool utils_string_has_asterisk_len(char *title, size_t len) {
     return len >= 2 && title[len - 2] == ' ' && title[len - 1] == '*';
 }
 
-bool utils_title_has_asterisk(char *title) {
+bool utils_string_has_asterisk(char *title) {
     size_t len = strlen(title);
-    return utils_title_has_asterisk_len(title, len);
+    return utils_string_has_asterisk_len(title, len);
 }
 
-void utils_add_asterisk_to_title(char **title) {
-    size_t len = strlen(*title);
-    *title = (char *) realloc(*title, len + 3);
-    (*title)[len] = ' ';
-    (*title)[len + 1] = '*';
-    (*title)[len + 2] = 0;
-}
-
-void utils_remove_asterisk_from_title(char **title) {
-    size_t len = strlen(*title);
-    if(utils_title_has_asterisk_len(*title, len))
-        title[len - 2] = 0;
+char *utils_add_asterisk_to_string(char *title) {
+    size_t len = strlen(title);
+    title = (char *) realloc(title, len + 3);
+    title[len] = ' ';
+    title[len + 1] = '*';
+    title[len + 2] = 0;
+    return title;
 }

@@ -8,20 +8,26 @@
 [x] clicking in the editor doesn't move cursor
 [x] automatic scrolling to cursor when out of view
 [x] paste from clipboard
+[x] move glEnable BLEND to renderer init
+[x] aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (very long lines, automatic scrolling)
+[x] refactor main -- move input handling into separate file / set of functions
+[x] changed file should be indicated in the window title
 
 ## IN PROGRESS
-[] refactor editor -- update scrolling, cursor etc. after similar operations, better input handling
+[] blinking cursor
 
 ## TODO
+[] actual tabs
+[] fix baseline
+[] Ctrl+F (search in file)
+[] glyphs outside ASCII range
+
+## BACKLOG
+[] window resizing
 [] selection + copy, cut
 [] selecting column (click) fix rounding
 [] consider a change in capitalization to be a word boundary
-[] refactor main -- move input handling into separate file / set of functions
 [] rewrite Makefile
-[] fix baseline
-[] changed file should be indicated in the window title
-[] tabs
-[] move glEnable BLEND to renderer init
 [] undo
-[] aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 [] config file
+[] editor tabs / windows / layout

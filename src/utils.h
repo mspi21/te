@@ -6,14 +6,12 @@
 
 size_t minul(size_t a, size_t b);
 
-char *strdup(char *src);
+char *strdup(const char *src);
 
 bool utils_is_word_boundary(char c);
 
-bool utils_title_has_asterisk(char *title);
+bool utils_string_has_asterisk(char *title);
 
-void utils_add_asterisk_to_title(char **title);
-
-void utils_remove_asterisk_from_title(char **title);
+char *utils_add_asterisk_to_string(char *title);
 
 #endif // UTILS_H_
