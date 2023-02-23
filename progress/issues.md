@@ -12,6 +12,7 @@
 [x] aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (very long lines, automatic scrolling)
 [x] refactor main -- move input handling into separate file / set of functions
 [x] changed file should be indicated in the window title
+[x] window resizing
 
 ## IN PROGRESS
 [] blinking cursor
@@ -23,7 +24,7 @@
 [] glyphs outside ASCII range
 
 ## BACKLOG
-[] window resizing
+[] smooth window resizing
 [] selection + copy, cut
 [] selecting column (click) fix rounding
 [] consider a change in capitalization to be a word boundary

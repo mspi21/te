@@ -10,7 +10,7 @@ SRCS = $(wildcard src/*.c)
 HDRS = $(wildcard src/*.h)
 OBJS = $(patsubst src/%.c, build/%.o, $(SRCS))
 
-$(TARGET_NAME): $(OBJS)
+$(TARGET_NAME): $(OBJS) Makefile.d
 	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LIBS) -lGL -lGLU
 
 build/%.o: src/%.c | build/
@@ -26,6 +26,7 @@ run:
 
 clean:
 	rm ./te
+	rm -r build/
 
 Makefile.d:
 	$(CC) -MM $(SRCS) > Makefile.d

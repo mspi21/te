@@ -38,10 +38,21 @@ int main(int argc, char **argv) {
 
     // Event loop
     bool quit = false;
+    int window_w, window_h;
+    SDL_GetWindowSize(window, &window_w, &window_h);
+
     while(!quit) {
         SDL_Event event = {0};
-        while(SDL_PollEvent(&event))
+        while(SDL_PollEvent(&event)) {
+            if(event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                window_w = event.window.data1, window_h = event.window.data2;
+                renderer_set_resolution(&renderer, window_w, window_h);
+                continue;
+            }
             handle_input(&event, &editor, &quit);
+        }
+
+        glViewport(0, 0, window_w, window_h);
 
         glClearColor(0.95f, 0.95f, 0.95f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
