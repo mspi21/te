@@ -13,11 +13,14 @@
 [x] refactor main -- move input handling into separate file / set of functions
 [x] changed file should be indicated in the window title
 [x] window resizing
+[x] rewrite Makefile
+[x] selecting column (click) fix rounding
 
 ## IN PROGRESS
-[] blinking cursor
+[] selection + copy, cut
 
 ## TODO
+[] blinking cursor
 [] actual tabs
 [] fix baseline
 [] Ctrl+F (search in file)
@@ -25,10 +28,7 @@
 
 ## BACKLOG
 [] smooth window resizing
-[] selection + copy, cut
-[] selecting column (click) fix rounding
 [] consider a change in capitalization to be a word boundary
-[] rewrite Makefile
 [] undo
 [] config file
 [] editor tabs / windows / layout

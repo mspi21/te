@@ -397,7 +397,7 @@ void editor_handle_single_click(Editor *editor, int32_t x, int32_t y) {
     Vec2f scroll_pos = editor->renderer->scroll_pos;
 
     size_t line_number = (scroll_pos.y + y) / line_height;
-    size_t col_number = (scroll_pos.x + x) / char_width;
+    size_t col_number = (scroll_pos.x + x + (char_width / 2)) / char_width;
 
     editor->cursor_row = minul(line_number, editor->lines_size - 1);
     editor->cursor_col = minul(col_number, editor->lines[editor->cursor_row].buffer_size);

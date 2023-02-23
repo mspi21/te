@@ -47,7 +47,6 @@ int main(int argc, char **argv) {
             if(event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
                 window_w = event.window.data1, window_h = event.window.data2;
                 renderer_set_resolution(&renderer, window_w, window_h);
-                continue;
             }
             handle_input(&event, &editor, &quit);
         }
