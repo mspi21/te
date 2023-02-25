@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "./selection.h"
 #include "./renderer.h"
 #include "./font.h"
 
@@ -29,6 +30,10 @@ typedef struct {
 
     char *loaded_file;
     bool changed_file;
+
+    bool is_selecting;
+    bool has_selection;
+    Selection selection;
 } Editor;
 
 bool editor_init(Editor *editor, SDL_Window *window, Renderer *renderer, Font *font);
@@ -55,7 +60,15 @@ void editor_delete_char_after_cursor(Editor *editor);
 
 void editor_insert_newline_at_cursor(Editor *editor);
 
+void editor_try_copy(Editor *editor);
+
+void editor_try_cut(Editor *editor);
+
 void editor_handle_single_click(Editor *editor, int32_t x, int32_t y);
+
+void editor_handle_click_release(Editor *editor);
+
+void editor_handle_mouse_drag(Editor *editor, int x, int y);
 
 void editor_move_cursor_right(Editor *editor);
 

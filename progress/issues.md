@@ -15,14 +15,22 @@
 [x] window resizing
 [x] rewrite Makefile
 [x] selecting column (click) fix rounding
+[x] segfault when selecting text and then typing
+[x] selection - backspace, delete, enter, typing
 
 ## IN PROGRESS
-[] selection + copy, cut
+[] selection - shift+arrows, no mod arrows
+[] copy, cut
 
 ## TODO
-[] blinking cursor
+[] line numbers
+[] syntax highlighting (for now just C)
+[] function collapsing
+[] shift click
+[] no dialog when quitting with unsaved changes and no loaded file
 [] actual tabs
 [] fix baseline
+[] blinking cursor
 [] Ctrl+F (search in file)
 [] glyphs outside ASCII range
 

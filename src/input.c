@@ -8,9 +8,22 @@ static void handle_textinput(SDL_TextInputEvent *text, Editor *editor) {
     editor_insert_text_at_cursor(editor, text->text);
 }
 
-static void handle_mouse_buttons(SDL_MouseButtonEvent *button, Editor *editor) {
+static void handle_mouse_button_press(SDL_MouseButtonEvent *button, Editor *editor) {
     if(button->button == SDL_BUTTON_LEFT && button->clicks == 1) {
+        // TODO shift click
         editor_handle_single_click(editor, button->x, button->y);
+    }
+}
+
+static void handle_mouse_button_release(SDL_MouseButtonEvent *button, Editor *editor) {
+    if(button->button == SDL_BUTTON_LEFT) {
+        editor_handle_click_release(editor);
+    }
+}
+
+static void handle_mouse_drag(SDL_MouseMotionEvent *motion, Editor *editor) {
+    if(motion->state == SDL_BUTTON_LMASK) {
+        editor_handle_mouse_drag(editor, motion->x, motion->y);
     }
 }
 
@@ -43,6 +56,8 @@ static void handle_ctrl_and_key_down(SDL_KeyboardEvent *key, Editor *editor) {
         case SDLK_o: { editor_load_file(editor); } break;
         case SDLK_s: { editor_save_file(editor); } break;
         case SDLK_n: { editor_new_file(editor); } break;
+        case SDLK_c: { editor_try_copy(editor); } break;
+        case SDLK_x: { editor_try_cut(editor); } break;
         case SDLK_v: {
             if(SDL_HasClipboardText()) {
                 char *clipboard = SDL_GetClipboardText();
@@ -96,7 +111,9 @@ void handle_input(SDL_Event *event, Editor *editor, bool *quit) {
     switch(event->type) {
         case SDL_QUIT: { *quit = editor_try_quit(editor); } return;
         case SDL_TEXTINPUT: { handle_textinput(&event->text, editor); } return;
-        case SDL_MOUSEBUTTONDOWN: { handle_mouse_buttons(&event->button, editor); } return;
+        case SDL_MOUSEBUTTONDOWN: { handle_mouse_button_press(&event->button, editor); } return;
+        case SDL_MOUSEBUTTONUP: { handle_mouse_button_release(&event->button, editor); } return;
+        case SDL_MOUSEMOTION: { handle_mouse_drag(&event->motion, editor); } return;
         case SDL_MOUSEWHEEL: { handle_mouse_wheel(&event->wheel, editor); } return;
         case SDL_KEYDOWN: { handle_key_down(&event->key, editor); } return;
     }

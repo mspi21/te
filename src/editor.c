@@ -73,6 +73,19 @@ static void line_delete_char(Line *line, size_t pos) {
     --line->buffer_size;
 }
 
+static void line_delete_range(Line *line, size_t start, size_t end) {
+    if(end <= start || end > line->buffer_size)
+        return;
+
+    memmove(
+        line->buffer + start,
+        line->buffer + end,
+        line->buffer_size - end
+    );
+
+    line->buffer_size -= end - start;
+}
+
 static void line_destroy(Line *line) {
     free(line->buffer);
     line->buffer = NULL;
@@ -134,7 +147,61 @@ static void editor_lines_grow(Editor *editor) {
     editor->lines = (Line *) realloc(editor->lines, editor->lines_capacity * sizeof(Line));
 }
 
+static void editor_render_selection(Editor *editor, size_t rs, size_t cs, size_t re, size_t ce) {
+    Vec4f color = vec4f(0.3f, 0.7f, 1.0f, 0.25f);
+    
+    int line_height = editor->font->atlas.height;
+    int char_width = editor->font->atlas.metrics['0'].advance_x;
+
+    // Selection is a single line
+    if(rs == re) {
+        if(cs == ce) return;
+        renderer_solid_rect(
+            editor->renderer,
+            vec2f(cs * char_width, rs * line_height),
+            vec2f((ce - cs) * char_width, (re - rs + 1) * line_height),
+            color
+        );
+        return;
+    }
+
+    // Selection is 2+ lines
+    renderer_solid_rect(
+        editor->renderer,
+        vec2f(cs * char_width, rs * line_height),
+        vec2f((editor->lines[rs].buffer_size - cs) * char_width, line_height),
+        color
+    );
+    for(size_t i = rs + 1; i < re; ++i)
+        renderer_solid_rect(
+            editor->renderer,
+            vec2f(0.0f, i * line_height),
+            vec2f(editor->lines[i].buffer_size * char_width, line_height),
+            color
+        );
+    renderer_solid_rect(
+        editor->renderer,
+        vec2f(0.0f, re * line_height),
+        vec2f(ce * char_width, line_height),
+        color
+    );
+}
+
 void editor_render(Editor *editor) {
+    // Render selection
+    if(editor->has_selection) {
+        renderer_set_shader(editor->renderer, SHADER_SOLID);
+        {
+            size_t srow_start, scol_start, srow_end, scol_end;
+            selection_get_ordered_range(
+                &editor->selection,
+                &srow_start, &scol_start, &srow_end, &scol_end
+            );
+            editor_render_selection(editor, srow_start, scol_start, srow_end, scol_end);
+        }
+        renderer_flush(editor->renderer);
+    }
+
     // Render text
     int line_height = editor->font->atlas.height;
     for(size_t i = 0; i < editor->lines_size; ++i) {
@@ -293,7 +360,46 @@ bool editor_new_file(Editor *editor) {
     return true;
 }
 
+static void editor_remove_selection(Editor *editor) {
+    size_t rs, cs, re, ce;
+    selection_get_ordered_range(&editor->selection, &rs, &cs, &re, &ce);
+    if(!rs && !cs && !re && !ce)
+        return;
+
+    // Selection is a single line
+    if(rs == re) {
+        line_delete_range(&editor->lines[rs], cs, ce);
+        goto epilog;
+    }
+
+    // Selection is 2+ lines
+    line_delete_range(&editor->lines[rs], cs, editor->lines[rs].buffer_size);
+    line_insert_text(
+        &editor->lines[rs],
+        editor->lines[rs].buffer_size,
+        editor->lines[re].buffer + ce,
+        editor->lines[re].buffer_size - ce
+    );
+    for(size_t i = rs + 1; i <= re; ++i)
+        line_destroy(&editor->lines[i]);
+    if(re != editor->lines_size - 1)
+        memmove(
+            editor->lines + rs + 1,
+            editor->lines + re + 1,
+            (editor->lines_size - (re + 1)) * sizeof(*editor->lines)
+        );
+    editor->lines_size -= re - rs;
+
+epilog:
+    selection_reset(&editor->selection);
+    editor->cursor_col = cs;
+    return;
+}
+
 void editor_insert_text_at_cursor(Editor *editor, const char *text) {
+    editor_remove_selection(editor);
+    editor->has_selection = false;
+
     size_t text_length = strlen(text);
 
     Line *line = &editor->lines[editor->cursor_row];
@@ -304,7 +410,25 @@ void editor_insert_text_at_cursor(Editor *editor, const char *text) {
     editor_adjust_view_to_cursor(editor);
 }
 
+void editor_try_copy(Editor *editor) {
+    if(!editor->has_selection)
+        return;
+    // TODO
+}
+
+void editor_try_cut(Editor *editor) {
+    if(!editor->has_selection)
+        return;
+    // TODO
+}
+
 void editor_delete_char_before_cursor(Editor *editor) {
+    if(editor->has_selection) {
+        editor_remove_selection(editor);
+        editor->has_selection = false;
+        return;
+    }
+
     if(editor->cursor_col) {
         Line *line = &editor->lines[editor->cursor_row];
         line_delete_char(line, --editor->cursor_col);
@@ -337,6 +461,12 @@ void editor_delete_char_before_cursor(Editor *editor) {
 }
 
 void editor_delete_char_after_cursor(Editor *editor) {
+    if(editor->has_selection) {
+        editor_remove_selection(editor);
+        editor->has_selection = false;
+        return;
+    }
+
     if(editor->cursor_col < editor->lines[editor->cursor_row].buffer_size) {
         Line *line = &editor->lines[editor->cursor_row];
         line_delete_char(line, editor->cursor_col);
@@ -365,6 +495,7 @@ void editor_delete_char_after_cursor(Editor *editor) {
 }
 
 void editor_insert_newline_at_cursor(Editor *editor) {
+    editor_remove_selection(editor);
     if(editor->lines_size == editor->lines_capacity)
         editor_lines_grow(editor);
     
@@ -390,17 +521,45 @@ void editor_insert_newline_at_cursor(Editor *editor) {
     editor_adjust_view_to_cursor(editor);
 }
 
-void editor_handle_single_click(Editor *editor, int32_t x, int32_t y) {
+static void editor_get_cursor_pos_from_coords(Editor *editor, int32_t x, int32_t y, size_t *row, size_t *col) {
     float line_height = (float) editor->font->atlas.height;
     // since we're using a monospace font, all characters should have the same advance_x
     float char_width = (float) editor->font->atlas.metrics['0'].advance_x;
     Vec2f scroll_pos = editor->renderer->scroll_pos;
 
-    size_t line_number = (scroll_pos.y + y) / line_height;
-    size_t col_number = (scroll_pos.x + x + (char_width / 2)) / char_width;
+    *row = minul(
+        (scroll_pos.y + y) / line_height,
+        editor->lines_size - 1
+    );
+    *col = minul(
+        (scroll_pos.x + x + (char_width / 2)) / char_width,
+        editor->lines[*row].buffer_size
+    );
+}
 
-    editor->cursor_row = minul(line_number, editor->lines_size - 1);
-    editor->cursor_col = minul(col_number, editor->lines[editor->cursor_row].buffer_size);
+void editor_handle_single_click(Editor *editor, int32_t x, int32_t y) {
+    editor_get_cursor_pos_from_coords(editor, x, y, &editor->cursor_row, &editor->cursor_col);
+    editor->has_selection = false;
+    editor->is_selecting = true;
+    selection_start_selecting(&editor->selection, editor->cursor_row, editor->cursor_col);
+}
+
+void editor_handle_click_release(Editor *editor) {
+    editor->is_selecting = false;
+}
+
+void editor_handle_mouse_drag(Editor *editor, int32_t x, int32_t y) {
+    if(!editor->is_selecting)
+        return;
+
+    size_t row, col;
+    editor_get_cursor_pos_from_coords(editor, x, y, &row, &col);
+    if(row != editor->cursor_row || col != editor->cursor_col) {
+        editor->has_selection = true;
+        editor->cursor_row = row;
+        editor->cursor_col = col;
+        selection_update_selection(&editor->selection, row, col);
+    }
 }
 
 void editor_move_cursor_right(Editor *editor) {
