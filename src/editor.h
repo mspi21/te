@@ -86,6 +86,14 @@ void editor_swap_lines_up(Editor *editor);
 
 void editor_swap_lines_down(Editor *editor);
 
+void editor_grow_selection_right(Editor *editor);
+
+void editor_grow_selection_left(Editor *editor);
+
+void editor_grow_selection_up(Editor *editor);
+
+void editor_grow_selection_down(Editor *editor);
+
 void editor_scroll_x(Editor *editor, float val);
 
 void editor_scroll_y(Editor *editor, float val);

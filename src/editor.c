@@ -124,9 +124,9 @@ static void editor_adjust_view_to_cursor(Editor *editor) {
 
 static void editor_contents_changed(Editor *editor) {
     if(editor->loaded_file && !editor->changed_file) {
-        editor->changed_file = true;
         editor_set_title(editor, utils_add_asterisk_to_string(strdup(editor->loaded_file)));
     }
+    editor->changed_file = true;
 }
 
 bool editor_init(Editor *editor, SDL_Window *window, Renderer *renderer, Font *font) {
@@ -592,6 +592,7 @@ void editor_handle_single_click(Editor *editor, int32_t x, int32_t y) {
     editor->has_selection = false;
     editor->is_selecting = true;
     selection_start_selecting(&editor->selection, editor->cursor_row, editor->cursor_col);
+    editor_adjust_view_to_cursor(editor);
 }
 
 void editor_handle_click_release(Editor *editor) {
@@ -613,6 +614,16 @@ void editor_handle_mouse_drag(Editor *editor, int32_t x, int32_t y) {
 }
 
 void editor_move_cursor_right(Editor *editor) {
+    if(editor->has_selection) {
+        size_t rs, cs, re, ce;
+        selection_get_ordered_range(&editor->selection, &rs, &cs, &re, &ce);
+        editor->cursor_row = re;
+        editor->cursor_col = ce;
+        selection_reset(&editor->selection);
+        editor->has_selection = false;
+        return;
+    }
+
     if(editor->cursor_col < editor->lines[editor->cursor_row].buffer_size) {
         ++editor->cursor_col;
     }
@@ -626,6 +637,16 @@ void editor_move_cursor_right(Editor *editor) {
 }
 
 void editor_move_cursor_left(Editor *editor) {
+    if(editor->has_selection) {
+        size_t rs, cs, re, ce;
+        selection_get_ordered_range(&editor->selection, &rs, &cs, &re, &ce);
+        editor->cursor_row = rs;
+        editor->cursor_col = cs;
+        selection_reset(&editor->selection);
+        editor->has_selection = false;
+        return;
+    }
+
     if(editor->cursor_col) --editor->cursor_col;
 
     else if(editor->cursor_row) {
@@ -637,6 +658,11 @@ void editor_move_cursor_left(Editor *editor) {
 }
 
 void editor_move_cursor_up(Editor *editor) {
+    if(editor->has_selection) {
+        selection_reset(&editor->selection);
+        editor->has_selection = false;
+    }
+
     if(editor->cursor_row) {
         --editor->cursor_row;
         editor_clamp_cursor(editor);
@@ -647,6 +673,11 @@ void editor_move_cursor_up(Editor *editor) {
 }
 
 void editor_move_cursor_down(Editor *editor) {
+    if(editor->has_selection) {
+        selection_reset(&editor->selection);
+        editor->has_selection = false;
+    }
+
     if(editor->cursor_row < editor->lines_size - 1) {
         ++editor->cursor_row;
         editor_clamp_cursor(editor);
@@ -657,6 +688,11 @@ void editor_move_cursor_down(Editor *editor) {
 }
 
 void editor_skip_word_right(Editor *editor) {
+    if(editor->has_selection) {
+        selection_reset(&editor->selection);
+        editor->has_selection = false;
+    }
+
     if(editor->cursor_col == editor->lines[editor->cursor_row].buffer_size) {
         editor_move_cursor_right(editor);
         return;
@@ -678,6 +714,11 @@ void editor_skip_word_right(Editor *editor) {
 }
 
 void editor_skip_word_left(Editor *editor) {
+    if(editor->has_selection) {
+        selection_reset(&editor->selection);
+        editor->has_selection = false;
+    }
+
     if(!editor->cursor_col) {
         editor_move_cursor_left(editor);
         return;
@@ -722,6 +763,22 @@ void editor_swap_lines_down(Editor *editor) {
 
     ++editor->cursor_row;
     editor_adjust_view_to_cursor(editor);
+}
+
+void editor_grow_selection_right(Editor *editor) {
+
+}
+
+void editor_grow_selection_left(Editor *editor) {
+
+}
+
+void editor_grow_selection_up(Editor *editor) {
+
+}
+
+void editor_grow_selection_down(Editor *editor) {
+
 }
 
 void editor_scroll_x(Editor *editor, float val) {

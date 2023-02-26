@@ -19,24 +19,38 @@
 [x] selection - backspace, delete, enter, typing
 [x] copy, cut
 [x] fix saving files (segfault)
+[x] selection - no mod arrows, skipping words
+[x] adjust view after click
+[x] saving + closing untitled files (no dialog when quitting with unsaved changes and no loaded file)
 
 ## IN PROGRESS
-[] fix saving + closing untitled files
-[] selection - shift+arrows, no mod arrows
+[] refactor "editor" class - split into smaller modules
+[] line.{h,c}
+[] cursor.{h,c}
+[] selection - shift+arrows
+[] fix pasting strings with newlines
 
 ## TODO
+[] shift click
+[] automatic indentation on new lines
+[] refactor selection?
+[] reset selection on file change (potential segfault)
+[] clamp scrolling	
+[] swapping lines w/ selection
 [] line numbers
 [] syntax highlighting (for now just C)
 [] function collapsing
-[] shift click
-[] no dialog when quitting with unsaved changes and no loaded file
 [] actual tabs
-[] fix baseline
-[] blinking cursor
 [] Ctrl+F (search in file)
-[] glyphs outside ASCII range
+[] horizontal cursor position persistence
 
 ## BACKLOG
+[] fix click not handled when window gets focus
+[] fix baseline
+[] multiple cursors
+[] blinking cursor
+[] glyphs outside ASCII range
+[] scroll indicator
 [] smooth window resizing
 [] consider a change in capitalization to be a word boundary
 [] undo

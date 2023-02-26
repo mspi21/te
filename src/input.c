@@ -1,7 +1,7 @@
 #include "./input.h"
 #include "./editor.h"
 
-#define SCROLL_SPEED 30.0f
+#define SCROLL_SPEED 60.0f
 #define SCROLL_INVERTED -1
 
 static void handle_textinput(SDL_TextInputEvent *text, Editor *editor) {
@@ -56,6 +56,10 @@ static void handle_ctrl_and_key_down(SDL_KeyboardEvent *key, Editor *editor) {
         case SDLK_o: { editor_load_file(editor); } break;
         case SDLK_s: { editor_save_file(editor); } break;
         case SDLK_n: { editor_new_file(editor); } break;
+        // Quickfix, will probably remove later
+        case SDLK_e: {
+            editor_handle_single_click(editor, 0, 1 << 31);
+        } break;
         case SDLK_c: { editor_try_copy(editor); } break;
         case SDLK_x: { editor_try_cut(editor); } break;
         case SDLK_v: {
@@ -65,11 +69,16 @@ static void handle_ctrl_and_key_down(SDL_KeyboardEvent *key, Editor *editor) {
                 SDL_free(clipboard);
             }
         } break;
+        default: return;
     }
 }
 
 static void handle_shift_and_key_down(SDL_KeyboardEvent *key, Editor *editor) {
     switch(key->keysym.sym) {
+        case SDLK_RIGHT: { editor_grow_selection_right(editor); } break;
+        case SDLK_LEFT:  { editor_grow_selection_left(editor); } break;
+        case SDLK_UP:    { editor_grow_selection_up(editor); } break;
+        case SDLK_DOWN:  { editor_grow_selection_down(editor); } break;
         default: return;
     }
 }
@@ -85,6 +94,7 @@ static void handle_key_down_no_mod(SDL_KeyboardEvent *key, Editor *editor) {
         case SDLK_DELETE: { editor_delete_char_after_cursor(editor); } break;
         case SDLK_RETURN: { editor_insert_newline_at_cursor(editor); } break;
         case SDLK_TAB: { editor_insert_text_at_cursor(editor, "\t"); } break;
+        default: return;
     }
 }
 
@@ -116,5 +126,6 @@ void handle_input(SDL_Event *event, Editor *editor, bool *quit) {
         case SDL_MOUSEMOTION: { handle_mouse_drag(&event->motion, editor); } return;
         case SDL_MOUSEWHEEL: { handle_mouse_wheel(&event->wheel, editor); } return;
         case SDL_KEYDOWN: { handle_key_down(&event->key, editor); } return;
+        default: return;
     }
 }
