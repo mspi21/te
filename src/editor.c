@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <SDL2/SDL.h>
+
 #include "./file.h"
 #include "./editor.h"
 #include "./dialog.h"
@@ -216,15 +218,11 @@ void editor_render(Editor *editor) {
         
         // Render cursor
         if(editor->cursor_row == i) {
-            /* if(editor->cursor_col > editor->lines[i].buffer_size) {
-                editor->cursor_col = editor->lines[i].buffer_size;
-            } */
             float x_pos = font_calculate_width(
                 editor->font,
                 editor->lines[i].buffer,
                 editor->cursor_col
             );
-            //printf("Calculated width of:\n\"%.*s\" (%ld chars) \nis %f\n", (int) editor->cursor_col, editor->lines[i].buffer, editor->cursor_col, x_pos);
             float y_pos = (float) (i * line_height);
             renderer_set_shader(editor->renderer, SHADER_SOLID);
             renderer_solid_rect(editor->renderer,
@@ -303,6 +301,48 @@ bool editor_load_file(Editor *editor) {
     return editor_load_file_from_path(editor, selected_file);
 }
 
+static void editor_get_range_as_str(
+    Editor *editor,
+    size_t rs, size_t cs,
+    size_t re, size_t ce,
+    char **buffer_ptr,
+    size_t *len_ptr
+) {
+    // Range is on a single line
+    if(rs == re) {
+        *len_ptr = ce - cs;
+        *buffer_ptr = (char *) malloc(*len_ptr + 1);
+        memcpy(*buffer_ptr, editor->lines[rs].buffer + cs, ce - cs);
+        (*buffer_ptr)[*len_ptr] = 0;
+        return;
+    }
+
+    // Range covers 2+ lines
+    *len_ptr = 0;
+    *len_ptr += editor->lines[rs].buffer_size - cs + 1; // newline
+    for(size_t i = rs + 1; i < re; ++i)
+        *len_ptr += editor->lines[i].buffer_size + 1; // newline
+    *len_ptr += ce;
+
+    *buffer_ptr = (char *) malloc(*len_ptr + 1); // null terminator
+    size_t buffer_pos = 0;
+
+    memcpy(*buffer_ptr + buffer_pos, editor->lines[rs].buffer + cs, editor->lines[rs].buffer_size - cs);
+    buffer_pos += editor->lines[rs].buffer_size - cs;
+    (*buffer_ptr)[buffer_pos++] = '\n';
+
+    for(size_t i = rs + 1; i < re; ++i) {
+        memcpy(*buffer_ptr + buffer_pos, editor->lines[i].buffer, editor->lines[i].buffer_size);
+        buffer_pos += editor->lines[i].buffer_size;
+        (*buffer_ptr)[buffer_pos++] = '\n';
+    }
+
+    memcpy(*buffer_ptr + buffer_pos, editor->lines[re].buffer, ce);
+    buffer_pos += ce;
+    buffer_ptr[buffer_pos] = 0;
+    assert(buffer_pos == *len_ptr);
+}
+
 bool editor_save_file(Editor *editor) {
     if(!editor->changed_file)
         return true;
@@ -314,29 +354,30 @@ bool editor_save_file(Editor *editor) {
             return false;
     }
 
-    size_t buffer_length = 0;
-    for(size_t i = 0; i < editor->lines_size; ++i) {
-        buffer_length += editor->lines[i].buffer_size + (i != editor->lines_size - 1);
-    }
-
-    char *buffer = (char *) malloc(buffer_length);
-    size_t buffer_pos = 0;
-    for(size_t i = 0; i < editor->lines_size && buffer_pos < buffer_length; ++i) {
-        memcpy(buffer + buffer_pos, editor->lines[i].buffer, editor->lines[i].buffer_size);
-        buffer_pos += editor->lines[i].buffer_size;
-        if(i != editor->lines_size - 1) {
-            memset(buffer + buffer_pos, '\n', 1);
-            buffer_pos += 1;
-        }
-    }
+    char *buffer;
+    size_t buffer_length;
+    editor_get_range_as_str(
+        editor,
+        0,
+        0,
+        editor->lines_size - 1,
+        editor->lines[editor->lines_size - 1].buffer_size,
+        &buffer,
+        &buffer_length
+    );
 
     if(!file_write(dest, buffer, buffer_length))
-        return false;
+        goto fail;
 
     editor->loaded_file = dest;
     editor->changed_file = false;
     editor_set_title(editor, editor->loaded_file);
+
+    free(buffer);
     return true;
+fail:
+    free(buffer);
+    return false;
 }
 
 bool editor_new_file(Editor *editor) {
@@ -413,13 +454,22 @@ void editor_insert_text_at_cursor(Editor *editor, const char *text) {
 void editor_try_copy(Editor *editor) {
     if(!editor->has_selection)
         return;
-    // TODO
+    size_t rs, cs, re, ce;
+    selection_get_ordered_range(&editor->selection, &rs, &cs, &re, &ce);
+    
+    char *text;
+    size_t text_length;
+    editor_get_range_as_str(editor, rs, cs, re, ce, &text, &text_length);
+    
+    SDL_SetClipboardText(text); // TODO error checking
+    free(text);
 }
 
 void editor_try_cut(Editor *editor) {
     if(!editor->has_selection)
         return;
-    // TODO
+    editor_try_copy(editor);
+    editor_remove_selection(editor);
 }
 
 void editor_delete_char_before_cursor(Editor *editor) {

@@ -17,10 +17,12 @@
 [x] selecting column (click) fix rounding
 [x] segfault when selecting text and then typing
 [x] selection - backspace, delete, enter, typing
+[x] copy, cut
+[x] fix saving files (segfault)
 
 ## IN PROGRESS
+[] fix saving + closing untitled files
 [] selection - shift+arrows, no mod arrows
-[] copy, cut
 
 ## TODO
 [] line numbers
