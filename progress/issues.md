@@ -22,11 +22,11 @@
 [x] selection - no mod arrows, skipping words
 [x] adjust view after click
 [x] saving + closing untitled files (no dialog when quitting with unsaved changes and no loaded file)
+[x] line.{h,c}
 
 ## IN PROGRESS
-[] refactor "editor" class - split into smaller modules
-[] line.{h,c}
 [] cursor.{h,c}
+[] refactor "editor" class - split into smaller modules
 [] selection - shift+arrows
 [] fix pasting strings with newlines
 
@@ -54,5 +54,9 @@
 [] smooth window resizing
 [] consider a change in capitalization to be a word boundary
 [] undo
+
+## IDEAS FOR FAR FUTURE
 [] config file
 [] editor tabs / windows / layout
+[] automatic generation of .c from .h files
+[] annotations + overview of annotations -- todo, fixme, tobetested...

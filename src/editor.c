@@ -5,93 +5,12 @@
 
 #include <SDL2/SDL.h>
 
-#include "./file.h"
-#include "./editor.h"
-#include "./dialog.h"
-#include "./utils.h"
+#include "file.h"
+#include "editor.h"
+#include "dialog.h"
+#include "utils.h"
 
-#define LINE_STARTING_CAPACITY 64
 #define TITLE_DEFAULT "Untitled file"
-
-static Line line_new() {
-    return (Line) {
-        .buffer = (char *) malloc(LINE_STARTING_CAPACITY),
-        .buffer_capacity = LINE_STARTING_CAPACITY,
-        .buffer_size = 0
-    };
-}
-
-static Line line_create_copy(const char *src, size_t len) {
-    Line line = {
-        .buffer = (char *) malloc(len),
-        .buffer_capacity = len,
-        .buffer_size = len
-    };
-    memcpy(line.buffer, src, len);
-    return line;
-}
-
-static void line_grow(Line *line) {
-    line->buffer_capacity = line->buffer_capacity * 2 + 64;
-    line->buffer = (char *) realloc(line->buffer, line->buffer_capacity);
-}
-
-static void line_insert_text(
-    Line *line, 
-    size_t pos,
-    const char *text,
-    size_t text_length
-) {
-    while(line->buffer_size + text_length > line->buffer_capacity)
-        line_grow(line);
-    
-    // Shift what was after the cursor to the right (make space for inserted text) 
-    memmove(
-        line->buffer + pos + text_length,
-        line->buffer + pos,
-        line->buffer_size - pos
-    );
-
-    // Copy text into buffer
-    memcpy(
-        line->buffer + pos,
-        text,
-        text_length
-    );
-
-    line->buffer_size += text_length;
-}
-
-static void line_delete_char(Line *line, size_t pos) {
-    if(pos >= line->buffer_size)
-        return;
-
-    memmove(
-        line->buffer + pos,
-        line->buffer + pos + 1,
-        line->buffer_size - pos
-    );
-
-    --line->buffer_size;
-}
-
-static void line_delete_range(Line *line, size_t start, size_t end) {
-    if(end <= start || end > line->buffer_size)
-        return;
-
-    memmove(
-        line->buffer + start,
-        line->buffer + end,
-        line->buffer_size - end
-    );
-
-    line->buffer_size -= end - start;
-}
-
-static void line_destroy(Line *line) {
-    free(line->buffer);
-    line->buffer = NULL;
-}
 
 static void editor_set_title(Editor *editor, const char *title) {
     SDL_SetWindowTitle(editor->window, title);
@@ -135,18 +54,11 @@ bool editor_init(Editor *editor, SDL_Window *window, Renderer *renderer, Font *f
     editor->renderer = renderer;
     editor->font = font;
 
-    editor->lines = (Line *) malloc(sizeof(Line));
-    editor->lines_capacity = 1;
-    editor->lines_size = 1;
-    editor->lines[0] = line_new();
+    lines_create(&editor->lines);
+    lines_append_line(&editor->lines, "", 0);
 
-    editor_set_title(editor, strdup(TITLE_DEFAULT));
+    editor_set_title(editor, TITLE_DEFAULT);
     return true;
-}
-
-static void editor_lines_grow(Editor *editor) {
-    editor->lines_capacity = editor->lines_capacity * 2 + 32;
-    editor->lines = (Line *) realloc(editor->lines, editor->lines_capacity * sizeof(Line));
 }
 
 static void editor_render_selection(Editor *editor, size_t rs, size_t cs, size_t re, size_t ce) {
@@ -235,21 +147,6 @@ void editor_render(Editor *editor) {
     }
 }
 
-static void editor_add_line(Editor *editor, const char *src, size_t len) {
-    if(editor->lines_size == editor->lines_capacity)
-        editor_lines_grow(editor);
-    editor->lines[editor->lines_size++] = line_create_copy(src, len);
-}
-
-static void editor_clear_lines(Editor *editor) {
-    for(size_t i = 0; i < editor->lines_size; ++i) {
-        line_destroy(&editor->lines[i]);
-    }
-    editor->lines = NULL;
-    editor->lines_size = 0;
-    editor->lines_capacity = 0;
-}
-
 static void editor_clamp_cursor(Editor *editor) {
     if(editor->cursor_col > editor->lines[editor->cursor_row].buffer_size) {
         editor->cursor_col = editor->lines[editor->cursor_row].buffer_size;
@@ -308,39 +205,8 @@ static void editor_get_range_as_str(
     char **buffer_ptr,
     size_t *len_ptr
 ) {
-    // Range is on a single line
-    if(rs == re) {
-        *len_ptr = ce - cs;
-        *buffer_ptr = (char *) malloc(*len_ptr + 1);
-        memcpy(*buffer_ptr, editor->lines[rs].buffer + cs, ce - cs);
-        (*buffer_ptr)[*len_ptr] = 0;
-        return;
-    }
-
-    // Range covers 2+ lines
-    *len_ptr = 0;
-    *len_ptr += editor->lines[rs].buffer_size - cs + 1; // newline
-    for(size_t i = rs + 1; i < re; ++i)
-        *len_ptr += editor->lines[i].buffer_size + 1; // newline
-    *len_ptr += ce;
-
-    *buffer_ptr = (char *) malloc(*len_ptr + 1); // null terminator
-    size_t buffer_pos = 0;
-
-    memcpy(*buffer_ptr + buffer_pos, editor->lines[rs].buffer + cs, editor->lines[rs].buffer_size - cs);
-    buffer_pos += editor->lines[rs].buffer_size - cs;
-    (*buffer_ptr)[buffer_pos++] = '\n';
-
-    for(size_t i = rs + 1; i < re; ++i) {
-        memcpy(*buffer_ptr + buffer_pos, editor->lines[i].buffer, editor->lines[i].buffer_size);
-        buffer_pos += editor->lines[i].buffer_size;
-        (*buffer_ptr)[buffer_pos++] = '\n';
-    }
-
-    memcpy(*buffer_ptr + buffer_pos, editor->lines[re].buffer, ce);
-    buffer_pos += ce;
-    buffer_ptr[buffer_pos] = 0;
-    assert(buffer_pos == *len_ptr);
+    selection_get_ordered_range(&editor->selection, rs, cs, re, ce);
+    lines_range_to_str(&editor->lines, rs, cs, re, ce, buffer_ptr, len_ptr);
 }
 
 bool editor_save_file(Editor *editor) {
@@ -407,31 +273,7 @@ static void editor_remove_selection(Editor *editor) {
     if(!rs && !cs && !re && !ce)
         return;
 
-    // Selection is a single line
-    if(rs == re) {
-        line_delete_range(&editor->lines[rs], cs, ce);
-        goto epilog;
-    }
-
-    // Selection is 2+ lines
-    line_delete_range(&editor->lines[rs], cs, editor->lines[rs].buffer_size);
-    line_insert_text(
-        &editor->lines[rs],
-        editor->lines[rs].buffer_size,
-        editor->lines[re].buffer + ce,
-        editor->lines[re].buffer_size - ce
-    );
-    for(size_t i = rs + 1; i <= re; ++i)
-        line_destroy(&editor->lines[i]);
-    if(re != editor->lines_size - 1)
-        memmove(
-            editor->lines + rs + 1,
-            editor->lines + re + 1,
-            (editor->lines_size - (re + 1)) * sizeof(*editor->lines)
-        );
-    editor->lines_size -= re - rs;
-
-epilog:
+    lines_delete_range(&editor->lines, rs, cs, re, ce);
     selection_reset(&editor->selection);
     editor->cursor_col = cs;
     return;
@@ -546,28 +388,11 @@ void editor_delete_char_after_cursor(Editor *editor) {
 
 void editor_insert_newline_at_cursor(Editor *editor) {
     editor_remove_selection(editor);
-    if(editor->lines_size == editor->lines_capacity)
-        editor_lines_grow(editor);
-    
-    Line *this_line = &editor->lines[editor->cursor_row];
-    
-    Line new_line = line_create_copy(
-        this_line->buffer + editor->cursor_col,
-        this_line->buffer_size - editor->cursor_col
-    );
-    this_line->buffer_size = editor->cursor_col;
+    lines_split(...);
 
-    memmove(
-        editor->lines + editor->cursor_row + 2,
-        editor->lines + editor->cursor_row + 1,
-        (editor->lines_size - editor->cursor_row - 1) * sizeof(*editor->lines)
-    );
-
-    ++editor->lines_size;
-    editor->lines[++editor->cursor_row] = new_line;
+    ++editor->cursor_row;
     editor->cursor_col = 0;
     editor_contents_changed(editor);
-
     editor_adjust_view_to_cursor(editor);
 }
 

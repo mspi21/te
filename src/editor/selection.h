@@ -2,12 +2,15 @@
 #define SELECTION_H_
 
 #include <stddef.h>
+#include <stdbool.h>
 
 typedef struct {
     size_t row_start;
     size_t col_start;
     size_t row_end;
     size_t col_end;
+
+    bool is_selecting;
 } Selection;
 
 void selection_update_selection(Selection *selection, size_t row, size_t col);
