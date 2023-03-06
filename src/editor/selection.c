@@ -1,10 +1,5 @@
 #include "selection.h"
 
-void selection_update_selection(Selection *selection, size_t row, size_t col) {
-    selection->row_end = row;
-    selection->col_end = col;
-}
-
 void selection_get_ordered_range(Selection *selection, size_t *sr, size_t *sc, size_t *er, size_t *ec) {
     if(selection->row_start < selection->row_end || (
         selection->row_start == selection->row_end &&
@@ -37,6 +32,24 @@ void selection_start_selecting(Selection *selection, size_t row, size_t col) {
     selection->row_end   = row;
     selection->col_start = col;
     selection->col_end   = col;
+    selection->is_selecting = true;
+}
+
+void selection_update_selection(Selection *selection, size_t row, size_t col) {
+    selection->row_end = row;
+    selection->col_end = col;
+}
+
+void selection_stop_selecting(Selection *selection) {
+    selection->is_selecting = false;
+}
+
+bool selection_is_selecting(Selection *selection) {
+    return selection->is_selecting;
+}
+
+bool selection_is_nonempty(Selection *selection) {
+    return selection->row_start != selection->row_end || selection->col_start != selection->col_end;
 }
 
 void selection_reset(Selection *selection) {

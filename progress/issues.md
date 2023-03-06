@@ -23,15 +23,19 @@
 [x] adjust view after click
 [x] saving + closing untitled files (no dialog when quitting with unsaved changes and no loaded file)
 [x] line.{h,c}
+[x] cursor.{h,c}
+[x] refactor "editor" class - split into smaller modules
 
 ## IN PROGRESS
-[] cursor.{h,c}
-[] refactor "editor" class - split into smaller modules
-[] selection - shift+arrows
+[] fix cursor weirdness after refactor
+[] selection - shift+arrows (input refactor?)
 [] fix pasting strings with newlines
 
 ## TODO
+[] zenity --confirm-overwrite
 [] shift click
+[] primary selection
+[] ctrl +-
 [] automatic indentation on new lines
 [] refactor selection?
 [] reset selection on file change (potential segfault)

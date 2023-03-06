@@ -2,6 +2,7 @@
 
 #include <memory.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "../utils.h"
 
@@ -13,7 +14,7 @@
 /* Line methods */
 
 void line_create(Line *line) {
-    return (Line) {
+    *line = (Line) {
         .buffer = (char *) malloc(LINE_INITIAL_CAPACITY),
         .buffer_capacity = LINE_INITIAL_CAPACITY,
         .buffer_size = 0
@@ -26,13 +27,12 @@ void line_create_copy(Line *line, const char *src, size_t src_length) {
         .buffer_capacity = src_length,
         .buffer_size = src_length
     };
-    memcpy((*line).buffer, src, src_length);
-    return line;
+    memcpy(line->buffer, src, src_length);
 }
 
 void line_grow(Line *line) {
     line->buffer_capacity = line->buffer_capacity * 2 + LINE_INITIAL_CAPACITY;
-    line->buffer = (char *) realloc(line->buffer, line->buffer_capacity);
+    line->buffer = (char *) realloc(line->buffer, line->buffer_capacity * sizeof(char));
 }
 
 void line_insert_text(Line *line, size_t pos, const char *text, size_t text_length) {
@@ -75,7 +75,7 @@ void line_destroy(Line *line) {
 /* LinesBuffer methods */
 
 void lines_create(LineBuffer *lb) {
-    return (LineBuffer) {
+    *lb = (LineBuffer) {
         .lines = (Line *) malloc(LINE_BUFFER_INITIAL_CAPACITY * sizeof(Line)),
         .lines_capacity = LINE_BUFFER_INITIAL_CAPACITY,
         .lines_size = 0
@@ -84,7 +84,7 @@ void lines_create(LineBuffer *lb) {
 
 void lines_grow(LineBuffer *lb) {
     lb->lines_capacity = lb->lines_capacity * 2 + LINE_BUFFER_INITIAL_CAPACITY;
-    lb->lines = (Line *) realloc(lb->lines, lb->lines_capacity);
+    lb->lines = (Line *) realloc(lb->lines, lb->lines_capacity * sizeof(Line));
 }
 
 void lines_grow_if_full(LineBuffer *lb) {
@@ -147,7 +147,7 @@ void lines_insert_line(
     line_create_copy(&lb->lines[i], src, src_length);
 }
 
-// @tobetested
+// FIXME
 void lines_insert_at(
     LineBuffer *lb, size_t row, size_t col, const char *src, size_t src_length
 ) {
