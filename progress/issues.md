@@ -27,10 +27,13 @@
 - [x] refactor "editor" class - split into smaller modules
 - [x] fix cursor weirdness after refactor
 - [x] fix pasting strings with newlines
+- [x] write a readme
 
 ## IN PROGRESS
+- [ ] fix saving existing files created by the editor
 - [ ] document refactored code
 - [ ] selection - shift+arrows (input refactor?)
+- [ ] ctrl+A
 
 ## TODO
 - [ ] zenity --confirm-overwrite
