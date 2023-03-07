@@ -234,8 +234,9 @@ static void editor_remove_selection(Editor *editor) {
 
     lines_delete_range(&editor->lines, rs, cs, re, ce);
     selection_reset(&editor->selection);
-    // TODO row = rs?
-    editor->cursor.col = cs;
+    source_info_contents_changed(&editor->source_info);
+
+    cursor_set(&editor->cursor, &editor->lines, rs, cs);
     return;
 }
 

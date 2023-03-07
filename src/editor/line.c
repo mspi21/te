@@ -3,6 +3,7 @@
 #include <memory.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "../utils.h"
 
@@ -147,12 +148,11 @@ void lines_insert_line(
     line_create_copy(&lb->lines[i], src, src_length);
 }
 
-// FIXME
 void lines_insert_at(
     LineBuffer *lb, size_t row, size_t col, const char *src, size_t src_length
 ) {
-    size_t pos = 0, last_pos = 0;
-    if((pos = utils_find_next_line(src, pos, src_length)) == src_length) {
+    size_t pos = utils_find_next_line(src, 0, src_length), last_pos = 0;
+    if(pos == src_length) {
         line_insert_text(&lb->lines[row], col, src, src_length);
         return;
     }
@@ -160,12 +160,12 @@ void lines_insert_at(
         line_insert_text(&lb->lines[row], col, src + last_pos, pos - last_pos);
         
         assert(src[pos] == '\n');
-        lines_split(lb, row, col);
+        lines_split(lb, row, col + pos - last_pos);
         ++row;
         col = 0;
         
-        last_pos = pos;
-        pos = utils_find_next_line(src, pos, src_length);
+        last_pos = pos + 1;
+        pos = utils_find_next_line(src, last_pos, src_length);
     }
     line_insert_text(&lb->lines[row], col, src + last_pos, pos - last_pos);
 }
@@ -186,7 +186,7 @@ void lines_range_to_str(
     *dest_length = 0;
     *dest_length += lb->lines[rs].buffer_size - cs + 1; // + 1 for \n
     for(size_t i = rs + 1; i < re; ++i)
-        *dest_length = lb->lines[i].buffer_size + 1; // + 1 for \n
+        *dest_length += lb->lines[i].buffer_size + 1; // + 1 for \n
     *dest_length += ce;
 
     *dest = (char *) malloc(*dest_length + 1); // + 1 for NT
@@ -197,14 +197,16 @@ void lines_range_to_str(
     (*dest)[buffer_pos++] = '\n';
 
     for(size_t i = rs + 1; i < re; ++i) {
-        memcpy(*dest + buffer_pos, lb->lines[rs].buffer, lb->lines[rs].buffer_size);
-        buffer_pos += lb->lines[rs].buffer_size;
+        memcpy(*dest + buffer_pos, lb->lines[i].buffer, lb->lines[i].buffer_size);
+        buffer_pos += lb->lines[i].buffer_size;
         (*dest)[buffer_pos++] = '\n';
     }
 
     memcpy(*dest + buffer_pos, lb->lines[re].buffer, ce);
     buffer_pos += ce;
     (*dest)[buffer_pos] = '\n';
+
+    printf("buffer_pos = %ld, *dest_length = %ld\n", buffer_pos, *dest_length);
     assert(buffer_pos == *dest_length);
 }
 
