@@ -14,10 +14,6 @@ typedef struct {
     SDL_Window *window;
 } SourceInfo;
 
-/* Symbolic constants */
-
-#define TITLE_DEFAULT "Untitled file"
-
 /* SourceInfo methods */
 
 void source_info_init(SourceInfo *si, SDL_Window *window);

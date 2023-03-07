@@ -25,11 +25,12 @@
 [x] line.{h,c}
 [x] cursor.{h,c}
 [x] refactor "editor" class - split into smaller modules
+[x] fix cursor weirdness after refactor
+[x] fix pasting strings with newlines
 
 ## IN PROGRESS
-[] fix cursor weirdness after refactor
+[] document refactored code
 [] selection - shift+arrows (input refactor?)
-[] fix pasting strings with newlines
 
 ## TODO
 [] zenity --confirm-overwrite

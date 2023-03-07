@@ -206,7 +206,6 @@ void lines_range_to_str(
     buffer_pos += ce;
     (*dest)[buffer_pos] = '\n';
 
-    printf("buffer_pos = %ld, *dest_length = %ld\n", buffer_pos, *dest_length);
     assert(buffer_pos == *dest_length);
 }
 

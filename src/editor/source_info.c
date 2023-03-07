@@ -2,6 +2,12 @@
 #include "../dialog.h"
 #include "../utils.h"
 
+#define TITLE_DEFAULT "Untitled file"
+
+static void source_info_set_title(SourceInfo *si, const char *title) {
+    SDL_SetWindowTitle(si->window, title);
+}
+
 void source_info_init(SourceInfo *si, SDL_Window *window) {
     *si = (SourceInfo) {
         .loaded_file = false,
@@ -9,12 +15,16 @@ void source_info_init(SourceInfo *si, SDL_Window *window) {
         .filepath = NULL,
         .window = window
     };
-    SDL_SetWindowTitle(window, TITLE_DEFAULT);
+    source_info_set_title(si, TITLE_DEFAULT);
 }
 
 void source_info_contents_changed(SourceInfo *si) {
     if(si->loaded_file && !si->changed_file) {
-        // ... TODO set title with asterisk
+        char *title = utils_add_asterisk_to_string(
+            strdup(si->filepath)
+        );
+        source_info_set_title(si, title);
+        free(title);
     }
     si->changed_file = true;
 }
@@ -26,12 +36,14 @@ bool source_info_new_file(SourceInfo *si) {
     free(si->filepath);
     si->filepath = NULL;
     si->changed_file = si->loaded_file = false;
-    // ... TODO set title to default
+    
+    source_info_set_title(si, TITLE_DEFAULT);
+
     return true;
 }
 
 void source_info_file_saved(SourceInfo *si) {
-    // ... TODO set title with no asterisk
+    source_info_set_title(si, si->filepath);
     si->changed_file = false;
 }
 
@@ -55,6 +67,8 @@ void source_info_file_loaded(SourceInfo *si, const char *filepath) {
     si->filepath = strdup(filepath);
     si->loaded_file = true;
     si->changed_file = false;
+
+    source_info_set_title(si, filepath);
 }
 
 bool source_info_assure_no_changes(SourceInfo *si) {
