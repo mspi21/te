@@ -4,43 +4,31 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "./selection.h"
-#include "./renderer.h"
-#include "./font.h"
-
 #include <SDL2/SDL.h>
 
-typedef struct {
-    char *buffer;
-    size_t buffer_size;
-    size_t buffer_capacity;
-} Line;
+#include "editor/line.h"
+#include "editor/cursor.h"
+#include "editor/selection.h"
+#include "editor/source_info.h"
+#include "renderer.h"
+#include "font.h"
 
 typedef struct {
     SDL_Window *window;
     Renderer *renderer;
     Font *font;
 
-    Line *lines;
-    size_t lines_size;
-    size_t lines_capacity;
-    
-    size_t cursor_row;
-    size_t cursor_col;
-
-    char *loaded_file;
-    bool changed_file;
-
-    bool is_selecting;
-    bool has_selection;
+    LineBuffer lines;
     Selection selection;
+    SourceInfo source_info;
+    Cursor cursor;
 } Editor;
 
 bool editor_init(Editor *editor, SDL_Window *window, Renderer *renderer, Font *font);
 
 void editor_render(Editor *editor);
 
-bool editor_load_file_from_path(Editor *editor, char *filepath);
+bool editor_load_file_from_path(Editor *editor, const char *filepath);
 
 bool editor_load_file(Editor *editor);
 

@@ -22,16 +22,21 @@
 [x] selection - no mod arrows, skipping words
 [x] adjust view after click
 [x] saving + closing untitled files (no dialog when quitting with unsaved changes and no loaded file)
+[x] line.{h,c}
+[x] cursor.{h,c}
+[x] refactor "editor" class - split into smaller modules
+[x] fix cursor weirdness after refactor
+[x] fix pasting strings with newlines
 
 ## IN PROGRESS
-[] refactor "editor" class - split into smaller modules
-[] line.{h,c}
-[] cursor.{h,c}
-[] selection - shift+arrows
-[] fix pasting strings with newlines
+[] document refactored code
+[] selection - shift+arrows (input refactor?)
 
 ## TODO
+[] zenity --confirm-overwrite
 [] shift click
+[] primary selection
+[] ctrl +-
 [] automatic indentation on new lines
 [] refactor selection?
 [] reset selection on file change (potential segfault)
@@ -54,5 +59,9 @@
 [] smooth window resizing
 [] consider a change in capitalization to be a word boundary
 [] undo
+
+## IDEAS FOR FAR FUTURE
 [] config file
 [] editor tabs / windows / layout
+[] automatic generation of .c from .h files
+[] annotations + overview of annotations -- todo, fixme, tobetested...

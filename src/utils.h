@@ -14,4 +14,6 @@ bool utils_string_has_asterisk(char *title);
 
 char *utils_add_asterisk_to_string(char *title);
 
+size_t utils_find_next_line(const char *src, size_t pos, size_t src_length);
+
 #endif // UTILS_H_
