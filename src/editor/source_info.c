@@ -45,6 +45,7 @@ bool source_info_new_file(SourceInfo *si) {
 void source_info_file_saved(SourceInfo *si) {
     source_info_set_title(si, si->filepath);
     si->changed_file = false;
+    si->loaded_file = true;
 }
 
 bool source_info_has_changes(SourceInfo *si) {

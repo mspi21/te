@@ -52,11 +52,19 @@ void editor_try_copy(Editor *editor);
 
 void editor_try_cut(Editor *editor);
 
+void editor_select_all(Editor *editor);
+
 void editor_handle_single_click(Editor *editor, int32_t x, int32_t y);
 
 void editor_handle_click_release(Editor *editor);
 
+void editor_handle_shift_click(Editor *editor, int32_t x, int32_t y);
+
 void editor_handle_mouse_drag(Editor *editor, int x, int y);
+
+void editor_deselect_and_set_cursor_before(Editor *editor);
+
+void editor_deselect_and_set_cursor_after(Editor *editor);
 
 void editor_move_cursor_right(Editor *editor);
 
@@ -73,14 +81,6 @@ void editor_skip_word_left(Editor *editor);
 void editor_swap_lines_up(Editor *editor);
 
 void editor_swap_lines_down(Editor *editor);
-
-void editor_grow_selection_right(Editor *editor);
-
-void editor_grow_selection_left(Editor *editor);
-
-void editor_grow_selection_up(Editor *editor);
-
-void editor_grow_selection_down(Editor *editor);
 
 void editor_scroll_x(Editor *editor, float val);
 

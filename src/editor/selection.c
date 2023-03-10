@@ -27,6 +27,13 @@ void selection_get_ordered_range(Selection *selection, size_t *sr, size_t *sc, s
     }
 }
 
+void selection_set(Selection *selection, size_t rs, size_t cs, size_t re, size_t ce) {
+    selection->row_start = rs;
+    selection->row_end   = re;
+    selection->col_start = cs;
+    selection->col_end   = ce;
+}
+
 void selection_start_selecting(Selection *selection, size_t row, size_t col) {
     selection->row_start = row;
     selection->row_end   = row;
