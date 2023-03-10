@@ -16,7 +16,7 @@ typedef enum {
 
 const static char *COMMANDS[COUNT_ZENITY_CMDS] = {
     [OPEN_FILE] = "zenity --file-selection",
-    [SAVE_FILE] = "zenity --file-selection --save",
+    [SAVE_FILE] = "zenity --file-selection --save --confirm-overwrite",
     [CONFIRM_UNSAVED_CHANGES] = "zenity --question --text \"You have unsaved changes. Do you wish to continue?\""
 };
 

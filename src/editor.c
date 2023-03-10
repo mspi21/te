@@ -135,7 +135,6 @@ void editor_render(Editor *editor) {
     }
 }
 
-// TODO finish refactor
 bool editor_load_file_from_path(Editor *editor, const char *filepath) {
     char *buffer;
     size_t length;
@@ -163,10 +162,10 @@ bool editor_load_file_from_path(Editor *editor, const char *filepath) {
 
     editor->renderer->scroll_pos = vec2f(0.0f, 0.0f);
     cursor_set(&editor->cursor, &editor->lines, 0, 0);
+    selection_reset(&editor->selection);
     return true;
 }
 
-// TODO finish refactor
 bool editor_load_file(Editor *editor) {
     if(editor->source_info.changed_file && !dialog_confirm_unsaved_changes())
         return false;
@@ -206,6 +205,7 @@ bool editor_save_file(Editor *editor) {
         goto fail;
 
     source_info_file_saved(&editor->source_info);
+    selection_reset(&editor->selection);
 
     free(buffer);
     return true;
@@ -223,6 +223,7 @@ bool editor_new_file(Editor *editor) {
 
     editor->renderer->scroll_pos = vec2f(0.0f, 0.0f);
     cursor_set(&editor->cursor, &editor->lines, 0, 0);
+    selection_reset(&editor->selection);
     return true;
 }
 

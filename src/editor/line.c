@@ -148,26 +148,27 @@ void lines_insert_line(
     line_create_copy(&lb->lines[i], src, src_length);
 }
 
-// fixme idk mannnnn
 void lines_insert_at(
     LineBuffer *lb, size_t row, size_t col, const char *src, size_t src_length
 ) {
-    size_t pos = utils_find_next_line(src, 0, src_length), last_pos = 0;
+    size_t last_pos = 0,
+                pos = utils_find_next_line(src, 0, src_length);
     if(pos == src_length) {
         line_insert_text(&lb->lines[row], col, src, src_length);
         return;
     }
-    while(pos < src_length && src[pos]) {
+    while(pos < src_length) {
         line_insert_text(&lb->lines[row], col, src + last_pos, pos - last_pos);
         
         assert(src[pos] == '\n');
-        lines_split(lb, row, col + pos - last_pos); // TODO not if reached end
+        lines_split(lb, row, col + pos - last_pos); // TODO not if reached end?
         ++row;
         col = 0;
         
         last_pos = pos + 1;
         pos = utils_find_next_line(src, last_pos, src_length);
     }
+    assert(pos == src_length);
     line_insert_text(&lb->lines[row], col, src + last_pos, pos - last_pos);
 }
 

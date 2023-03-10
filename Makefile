@@ -22,7 +22,7 @@ build/editor:
 all: te
 
 run:
-	./te
+	./te &
 
 clean:
 	rm ./te

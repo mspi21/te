@@ -1,31 +1,28 @@
 # Issue tracker
 
 ## IN PROGRESS
-- [ ] fix multiple line paste
+- [ ] automatic indentation on new lines
+- [ ] line numbers
 
 ## TODO
+- [ ] fix SDL_GetClipboardText returning garbage?
 - [ ] refactor selection_is_nonempty into selection_is_empty
-- [ ] fix word skip skipping first whitespace
+- [ ] assure that there's a newline at the end of the file before saving
+
 - [ ] fix adjust_view_to_cursor on first invisible line
-- [ ] zenity --confirm-overwrite
 - [ ] primary selection
-- [ ] ctrl +-
-- [ ] automatic indentation on new lines
-- [ ] refactor selection?
-- [ ] reset selection on file change (potential segfault)
 - [ ] clamp scrolling	
-- [ ] swapping lines w/ selection
-- [ ] line numbers
-- [ ] syntax highlighting (for now just C)
-- [ ] function collapsing
-- [ ] actual tabs
-- [ ] Ctrl+F (search in file)
-- [ ] horizontal cursor position persistence
-- [ ] document function headers
-- [ ] file dialog should start in "current" directory
-- [ ] test for memory leaks
 
 ## BACKLOG
+- [ ] syntax highlighting (for now just C)
+- [ ] function collapsing
+- [ ] Ctrl+F (search in file)
+- [ ] file dialog should start in "current" directory
+- [ ] document function headers
+- [ ] test for memory leaks
+- [ ] fix word skip skipping whitespace
+- [ ] ctrl +- (font size), font selection
+- [ ] actual tabs
 - [ ] fix click not handled when window gets focus
 - [ ] fix baseline
 - [ ] multiple cursors
@@ -43,6 +40,9 @@
 - [ ] annotations + overview of annotations -- todo, fixme, tobetested...
 
 ## QA
+- [x] zenity --confirm-overwrite
+- [x] horizontal cursor position persistence
+- [x] reset selection on file change (potential segfault)
 - [x] shift click
 - [x] selection - shift+arrows
 - [x] fix saving existing files created by the editor
@@ -56,6 +56,7 @@
 - [x] saving + closing untitled files (no dialog when quitting with unsaved changes and no loaded file)
 - [x] adjust view after click
 - [x] selection - no mod arrows, skipping words
+- [x] refactor selection
 - [x] fix saving files (segfault)
 - [x] copy, cut
 - [x] selection - backspace, delete, enter, typing

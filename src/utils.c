@@ -43,6 +43,6 @@ char *utils_add_asterisk_to_string(char *title) {
 
 size_t utils_find_next_line(const char *src, size_t pos, size_t src_length) {
     size_t i = pos;
-    for(; src[i] && src[i] != '\n' && i < src_length; ++i);
+    for(; i < src_length && src[i] && src[i] != '\n'; ++i);
     return i;
 }

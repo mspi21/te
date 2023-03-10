@@ -8,6 +8,8 @@
 typedef struct {
     size_t row;
     size_t col;
+
+    size_t col_persist;
 } Cursor;
 
 void cursor_init(Cursor *cursor);

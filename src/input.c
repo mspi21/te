@@ -6,6 +6,8 @@
 #define SCROLL_SPEED 60.0f
 #define SCROLL_INVERTED -1
 
+#define TEXT_TAB "    "
+
 // TODO make an input structure
 static unsigned long is_shift_down = 0;
 
@@ -100,8 +102,9 @@ static void handle_ctrl_and_key_down(SDL_KeyboardEvent *key, Editor *editor) {
         case SDLK_c: { editor_try_copy(editor); } break;
         case SDLK_x: { editor_try_cut(editor); } break;
         case SDLK_v: {
-            if(SDL_HasClipboardText()) {
+            if(SDL_HasClipboardText() == SDL_TRUE) {
                 char *clipboard = SDL_GetClipboardText();
+                //printf("Debug: Clipboard text:\n===\n%s\n===\n", clipboard);
                 editor_insert_text_at_cursor(editor, clipboard);
                 SDL_free(clipboard);
             }
@@ -167,7 +170,7 @@ static void handle_key_down_no_mod(SDL_KeyboardEvent *key, Editor *editor) {
         case SDLK_BACKSPACE: { editor_delete_char_before_cursor(editor); } break;
         case SDLK_DELETE: { editor_delete_char_after_cursor(editor); } break;
         case SDLK_RETURN: { editor_insert_newline_at_cursor(editor); } break;
-        case SDLK_TAB: { editor_insert_text_at_cursor(editor, "\t"); } break;
+        case SDLK_TAB: { editor_insert_text_at_cursor(editor, TEXT_TAB); } break;
         default: return;
     }
 }
